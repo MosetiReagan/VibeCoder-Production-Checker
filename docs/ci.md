@@ -20,4 +20,13 @@ Generate SARIF for GitHub code scanning:
 production-check --format sarif --output production-check.sarif
 ```
 
+Adopt findings incrementally with a baseline:
+
+```bash
+production-check baseline --output .production-check-baseline.json
+production-check --ci --fail-on high --baseline .production-check-baseline.json
+```
+
+The baseline records a cryptographic signature for each finding. Moving a finding, changing its evidence, or changing its rule invalidates that entry so it appears again.
+
 CI does not execute project code or package lifecycle scripts.

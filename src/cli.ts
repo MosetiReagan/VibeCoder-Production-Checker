@@ -4,6 +4,7 @@ import { Command, InvalidArgumentError } from 'commander';
 import pc from 'picocolors';
 import { scanProject } from './core/scanner.js';
 import { explainScores, findingsMeetThreshold } from './core/scoring.js';
+import { applyBaseline, createBaseline } from './core/baseline.js';
 import { conciseReport, htmlReport, jsonReport, markdownReport, sarifReport, terminalReport } from './reporters/index.js';
 import { getRule } from './rules/index.js';
 import type { Severity } from './shared.js';
@@ -27,22 +28,24 @@ program
   .option('--html <file>', 'write a self-contained HTML report')
   .option('--ci', 'use concise CI output and exit 1 when the fail-on threshold is violated')
   .option('--fail-on <severity>', 'minimum severity that causes CI failure', severity)
-  .action(async (target: string, options: { format: string; output?: string; html?: string; ci?: boolean; failOn?: Severity }) => {
+  .option('--baseline <file>', 'suppress findings recorded in a baseline file')
+  .action(async (target: string, options: { format: string; output?: string; html?: string; ci?: boolean; failOn?: Severity; baseline?: string }) => {
     try {
       const result = await scanProject({ path: target });
-      if (options.html) await fs.writeFile(options.html, htmlReport(result), 'utf8');
+      const reportedResult = options.baseline ? applyBaseline(result, options.baseline) : result;
+      if (options.html) await fs.writeFile(options.html, htmlReport(reportedResult), 'utf8');
       const format = options.format.toLowerCase();
       if (options.output) {
-        const content = reportFor(format, result, options.ci === true);
+        const content = reportFor(format, reportedResult, options.ci === true);
         await fs.writeFile(options.output, content, 'utf8');
       }
       if (format !== 'terminal' && !options.output) {
-        process.stdout.write(reportFor(format, result, options.ci === true));
+        process.stdout.write(reportFor(format, reportedResult, options.ci === true));
       } else if (format === 'terminal' && !options.output) {
-        process.stdout.write(options.ci ? conciseReport(result) + '\n' : `${terminalReport(result)}\n`);
+        process.stdout.write(options.ci ? conciseReport(reportedResult) + '\n' : `${terminalReport(reportedResult)}\n`);
       }
       const failOn = options.failOn ?? result.config.failOn;
-      if (options.ci && failOn && findingsMeetThreshold(result.findings, failOn)) {
+      if (options.ci && failOn && findingsMeetThreshold(reportedResult.findings, failOn)) {
         process.stderr.write(`Failing because findings meet or exceed ${failOn}\n`);
         process.exitCode = 1;
       }
@@ -50,6 +53,18 @@ program
       process.stderr.write(`${pc.red('Error:')} ${error instanceof Error ? error.message : String(error)}\n`);
       process.exitCode = 1;
     }
+  });
+
+program
+  .command('baseline')
+  .description('Record current findings for incremental adoption')
+  .argument('[path]', 'project directory to scan', '.')
+  .option('-o, --output <file>', 'baseline output file; defaults to stdout')
+  .action(async (target: string, options: { output?: string }) => {
+    const result = await scanProject({ path: target });
+    const baseline = `${JSON.stringify(createBaseline(result), null, 2)}\n`;
+    if (options.output) await fs.writeFile(options.output, baseline, 'utf8');
+    else process.stdout.write(baseline);
   });
 
 program
