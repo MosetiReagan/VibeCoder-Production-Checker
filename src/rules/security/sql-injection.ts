@@ -2,7 +2,9 @@ import { createFinding, createRule, scanLines, trimEvidence } from '../helpers.j
 
 const unsafeSql = [
   /(?:query|execute|raw|all|get)\s*\(\s*[`"'](?:SELECT|INSERT|UPDATE|DELETE)[^`"']*[`"']\s*\+/i,
-  /(?:query|execute|raw)\s*\(\s*[`"'][^`"']*\$\{[^}]+\}[^`"']*[`"']/i
+  /(?:query|execute|raw)\s*\(\s*[`"'][^`"']*\$\{[^}]+\}[^`"']*[`"']/i,
+  /(?:const|let|var)\s+(\w+)\s*=\s*[`"'](?:SELECT|INSERT|UPDATE|DELETE)[^`"']*(?:\$\{[^}]+\}|['"]\s*\+)/i,
+  /^\s*(\w+)\s*=\s*['"`](?:SELECT|INSERT|UPDATE|DELETE)[^'"`]*(?:\$\{[^}]+\}|['"]\s*\+)/im
 ];
 
 export const sqlInjection = createRule({
@@ -13,18 +15,41 @@ export const sqlInjection = createRule({
   severity: 'high',
   confidence: 'medium',
   async run(context) {
-    return scanLines(context, unsafeSql, (file, line, text) => createFinding({
-      ruleId: this.id,
-      title: this.title,
-      severity: this.severity,
-      confidence: this.confidence,
-      category: this.category,
-      file,
-      line,
-      evidence: trimEvidence(text),
-      description: 'A SQL statement appears to be constructed by concatenation or interpolation.',
-      impact: 'If the interpolated value is attacker-controlled, SQL injection can expose or modify application data.',
-      recommendation: 'Use parameterized queries or the query-builder APIs provided by Prisma, Drizzle, Sequelize, TypeORM, or Knex.'
-    }));
+    return scanLines(context, unsafeSql, (file, line, text, match) => {
+      const variableName = match[1];
+      if (!variableName) {
+        return createFinding({
+          ruleId: 'SEC-004',
+          title: 'Potentially unsafe SQL construction',
+          severity: 'high',
+          confidence: 'medium',
+          category: 'security',
+          file,
+          line,
+          evidence: trimEvidence(text),
+          description: 'A SQL statement appears to be constructed by concatenation or interpolation.',
+          impact: 'If the interpolated value is attacker-controlled, SQL injection can expose or modify application data.',
+          recommendation: 'Use parameterized queries or the query-builder APIs provided by Prisma, Drizzle, Sequelize, TypeORM, or Knex.'
+        });
+      }
+      const isQueried = context.files.some((scannedFile) =>
+        scannedFile.relativePath === file &&
+        new RegExp(`\\b(?:query|execute|raw|all|get)\\s*\\(\\s*${variableName}\\b`).test(scannedFile.content)
+      );
+      if (!isQueried) return null;
+      return createFinding({
+        ruleId: 'SEC-004',
+        title: 'Potentially unsafe SQL construction',
+        severity: 'high',
+        confidence: 'medium',
+        category: 'security',
+        file,
+        line,
+        evidence: trimEvidence(text),
+        description: 'A SQL statement appears to be constructed by concatenation or interpolation.',
+        impact: 'If the interpolated value is attacker-controlled, SQL injection can expose or modify application data.',
+        recommendation: 'Use parameterized queries or the query-builder APIs provided by Prisma, Drizzle, Sequelize, TypeORM, or Knex.'
+      });
+    });
   }
 });
