@@ -26,3 +26,5 @@ A production rule must answer a deployment-risk question, not merely search for 
 - Is confidence honest?
 
 Add rules to `src/rules/<category>/` and export them from `src/rules/index.ts`.
+
+JavaScript and TypeScript rules can use the syntax-tree helpers in `src/rules/analysis/typescript-ast.ts` for more precise expression and call analysis. Regex fallbacks remain available for languages without an AST adapter.

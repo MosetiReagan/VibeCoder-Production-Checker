@@ -1,4 +1,5 @@
 import { createFinding, createRule, scanLines, trimEvidence } from '../helpers.js';
+import { findUnsafeSqlExecutions, isJavaScriptLike } from '../analysis/typescript-ast.js';
 
 const unsafeSql = [
   /(?:query|execute|raw|all|get)\s*\(\s*[`"'](?:SELECT|INSERT|UPDATE|DELETE)[^`"']*[`"']\s*\+/i,
@@ -15,7 +16,28 @@ export const sqlInjection = createRule({
   severity: 'high',
   confidence: 'medium',
   async run(context) {
-    return scanLines(context, unsafeSql, (file, line, text, match) => {
+    const astFindings = context.files
+      .filter(isJavaScriptLike)
+      .flatMap((file) =>
+        findUnsafeSqlExecutions(file).map((finding) =>
+          createFinding({
+            ruleId: this.id,
+            title: this.title,
+            severity: this.severity,
+            confidence: this.confidence,
+            category: this.category,
+            file: file.relativePath,
+            line: finding.line,
+            evidence: trimEvidence(finding.evidence),
+            description: 'A SQL statement appears to be constructed by concatenation or interpolation.',
+            impact: 'If the interpolated value is attacker-controlled, SQL injection can expose or modify application data.',
+            recommendation: 'Use parameterized queries or the query-builder APIs provided by Prisma, Drizzle, Sequelize, TypeORM, or Knex.'
+          })
+        )
+      );
+    const legacyFiles = context.files.filter((file) => !isJavaScriptLike(file));
+    const legacyContext = { ...context, files: legacyFiles };
+    const legacyFindings = scanLines(legacyContext, unsafeSql, (file, line, text, match) => {
       const variableName = match[1];
       if (!variableName) {
         return createFinding({
@@ -32,7 +54,7 @@ export const sqlInjection = createRule({
           recommendation: 'Use parameterized queries or the query-builder APIs provided by Prisma, Drizzle, Sequelize, TypeORM, or Knex.'
         });
       }
-      const isQueried = context.files.some((scannedFile) =>
+      const isQueried = legacyContext.files.some((scannedFile) =>
         scannedFile.relativePath === file &&
         new RegExp(`\\b(?:query|execute|raw|all|get)\\s*\\(\\s*${variableName}\\b`).test(scannedFile.content)
       );
@@ -51,5 +73,6 @@ export const sqlInjection = createRule({
         recommendation: 'Use parameterized queries or the query-builder APIs provided by Prisma, Drizzle, Sequelize, TypeORM, or Knex.'
       });
     });
+    return [...astFindings, ...legacyFindings];
   }
 });

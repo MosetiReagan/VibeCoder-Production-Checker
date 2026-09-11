@@ -42,7 +42,16 @@ describe('rule regression coverage', () => {
       createSourceFile('src/db.ts', `const sql = "SELECT * FROM users WHERE id = " + userId;\ndb.query(sql);`)
     ]);
     expect(findings).toHaveLength(1);
-    expect(findings[0].line).toBe(1);
+    expect(findings[0].line).toBe(2);
+  });
+
+  it('uses the AST for JavaScript SQL construction', async () => {
+    const { sqlInjection } = await import('../src/rules/security/sql-injection.js');
+    const findings = await runRule(sqlInjection, [
+      createSourceFile('src/db.ts', 'const sql = `SELECT * FROM users WHERE id = ${userId}`;\ndb.query(sql);')
+    ]);
+    expect(findings).toHaveLength(1);
+    expect(findings[0].evidence).toContain('db.query(sql)');
   });
 
   it('keeps parameterized SQL quiet', async () => {
