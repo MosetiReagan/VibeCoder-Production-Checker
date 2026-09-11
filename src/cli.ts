@@ -94,12 +94,14 @@ program
 
 program
   .command('explain <rule-id>')
-  .description('Show detailed rule guidance and any current findings')
-  .action(async (ruleId: string) => {
+  .description('Show detailed rule guidance')
+  .option('--find', 'also scan the project for current findings')
+  .action(async (ruleId: string, options: { find?: boolean }) => {
     const rule = getRule(ruleId.toUpperCase());
     if (!rule) throw new Error(`Unknown rule: ${ruleId}`);
-    const result = await scanProject({ path: '.' });
-    const findings = result.findings.filter((finding) => finding.ruleId === rule.id);
+    const findings = options.find
+      ? (await scanProject({ path: '.' })).findings.filter((finding) => finding.ruleId === rule.id)
+      : [];
     process.stdout.write([
       `Rule ${rule.id}`,
       rule.title,
@@ -110,8 +112,15 @@ program
       'Why it matters:',
       rule.description,
       '',
-      'Detected in:',
-      ...(findings.length ? findings.map((finding) => `${finding.file}:${finding.line}\n${finding.evidence}`) : ['No current findings.']),
+      ...(options.find
+        ? [
+            'Detected in:',
+            ...(findings.length
+              ? findings.map((finding) => `${finding.file}:${finding.line}\n${finding.evidence}`)
+              : ['No current findings.']),
+            ''
+          ]
+        : []),
       '',
       'Recommended fix:',
       findings[0]?.recommendation ?? rule.description

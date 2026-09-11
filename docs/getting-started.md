@@ -29,6 +29,7 @@ node dist/cli.js . --ci --fail-on high
 node dist/cli.js . --quiet
 node dist/cli.js . --no-color
 node dist/cli.js explain SEC-001
+node dist/cli.js explain SEC-001 --find
 node dist/cli.js score
 ```
 

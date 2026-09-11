@@ -83,6 +83,7 @@ production-check --html report.html
 production-check --quiet
 production-check --no-color
 production-check explain SEC-001
+production-check explain SEC-001 --find
 production-check score
 ```
 
