@@ -27,7 +27,7 @@ export function scanLines(
 ): Finding[] {
   const findings: Finding[] = [];
   for (const file of context.files) {
-    if (isDocumentation(file.relativePath)) continue;
+    if (file.isDocs ?? isDocumentation(file.relativePath)) continue;
     file.lines.forEach((text, index) => {
       for (const pattern of patterns) {
         const match = text.match(pattern);

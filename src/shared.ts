@@ -45,6 +45,7 @@ export interface SourceFile {
   extension: string;
   size: number;
   mtimeMs: number;
+  isDocs?: boolean;
 }
 
 export interface ProjectInfo {

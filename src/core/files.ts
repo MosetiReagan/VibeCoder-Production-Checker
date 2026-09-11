@@ -58,7 +58,8 @@ export function discoverFiles(root: string, excludes: string[]): SourceFile[] {
           lines: content.split(/\r?\n/),
           extension: extension || (baseName === 'dockerfile' ? '.dockerfile' : ''),
           size: stat.size,
-          mtimeMs: stat.mtimeMs
+          mtimeMs: stat.mtimeMs,
+          isDocs: normalized.startsWith('docs/') || extension === '.md'
         });
       }
     }

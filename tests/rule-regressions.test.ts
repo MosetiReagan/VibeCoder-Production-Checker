@@ -13,7 +13,8 @@ export function createSourceFile(relativePath: string, content: string): SourceF
     lines: content.split(/\r?\n/),
     extension: relativePath.slice(relativePath.lastIndexOf('.')),
     size: content.length,
-    mtimeMs: 1
+    mtimeMs: 1,
+    isDocs: false
   };
 }
 
@@ -218,5 +219,13 @@ describe('rule regression coverage', () => {
     ]);
     expect(findings).toHaveLength(1);
     expect(findings[0].line).toBe(3);
+  });
+
+  it('honors source metadata for documentation exclusions', async () => {
+    const { hardcodedSecrets } = await import('../src/rules/security/hardcoded-secrets.js');
+    const documentation = createSourceFile('src/architecture.md', 'API_KEY="documentation-example-secret"');
+    documentation.isDocs = true;
+    const findings = await runRule(hardcodedSecrets, [documentation]);
+    expect(findings).toHaveLength(0);
   });
 });
