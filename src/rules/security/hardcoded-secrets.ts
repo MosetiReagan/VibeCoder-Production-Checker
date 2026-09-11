@@ -21,7 +21,7 @@ export const hardcodedSecrets = createRule({
     return scanLines(context, secretPatterns, (file, line, text, match) => {
       if (file === '.env.example') return null;
       let evidence = trimEvidence(text);
-      if (match[1]) evidence = evidence.replace(match[1], redactValue(match[1]));
+      if (match[1]) evidence = evidence.split(match[1]).join(redactValue(match[1]));
       return createFinding({
         ruleId: this.id,
         title: this.title,

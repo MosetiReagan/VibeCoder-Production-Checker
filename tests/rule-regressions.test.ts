@@ -90,4 +90,15 @@ describe('rule regression coverage', () => {
     expect(findings).toHaveLength(1);
     expect(findings[0].file).toBe('src/routes.ts');
   });
+
+  it('redacts every occurrence of a repeated secret', async () => {
+    const { hardcodedSecrets } = await import('../src/rules/security/hardcoded-secrets.js');
+    const secret = 'sk-test-1234567890abcdefghij';
+    const findings = await runRule(hardcodedSecrets, [
+      createSourceFile('src/config.ts', `const apiKey = "${secret}"; const backupKey = "${secret}";`)
+    ]);
+    expect(findings).toHaveLength(1);
+    expect(findings[0].evidence).not.toContain(secret);
+    expect(findings[0].evidence.match(/sk-tes\*+/g)).toHaveLength(2);
+  });
 });
