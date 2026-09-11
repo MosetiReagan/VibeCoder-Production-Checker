@@ -174,13 +174,15 @@ function severityToSarifLevel(severity: Severity): 'error' | 'warning' | 'note' 
 }
 
 export function htmlReport(result: ScanResult): string {
-  const findings = result.findings.map((finding) => `
-    <article class="finding ${finding.severity}">
-      <header><span>${finding.severity.toUpperCase()}</span><strong>${escapeHtml(finding.title)}</strong></header>
-      <p><code>${escapeHtml(finding.file)}:${finding.line}</code> · confidence ${finding.confidence}</p>
-      <pre>${escapeHtml(finding.evidence)}</pre>
-      <p>${escapeHtml(finding.impact)}</p>
-      <p><strong>Fix:</strong> ${escapeHtml(finding.recommendation)}</p>
+  const findings = result.findings.map((finding, index) => `
+    <article id="finding-${index + 1}" class="finding ${finding.severity}" data-severity="${finding.severity}">
+      <header><span>${finding.severity.toUpperCase()}</span><strong>${escapeHtml(finding.title)}</strong><button type="button" class="toggle" aria-expanded="true">Hide</button></header>
+      <div class="details">
+        <p><code>${escapeHtml(finding.file)}:${finding.line}</code> · confidence ${finding.confidence}</p>
+        <pre>${escapeHtml(finding.evidence)}</pre>
+        <p>${escapeHtml(finding.impact)}</p>
+        <p><strong>Fix:</strong> ${escapeHtml(finding.recommendation)}</p>
+      </div>
     </article>`).join('');
   const categories = Object.entries(result.score.categories).map(([category, score]) =>
     `<div class="category"><span>${escapeHtml(categoryLabels[category as keyof typeof categoryLabels] ?? category)}</span><strong>${score}</strong></div>`
@@ -189,13 +191,18 @@ export function htmlReport(result: ScanResult): string {
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Production Checker Report</title>
 <style>
-:root{color-scheme:light dark;--bg:#0b1020;--card:#151c31;--text:#e9eefb;--muted:#a9b4cc;--high:#ef4444;--medium:#f59e0b;--low:#38bdf8}*{box-sizing:border-box}body{margin:0;font:15px/1.55 system-ui,sans-serif;background:var(--bg);color:var(--text)}main{max-width:960px;margin:auto;padding:32px}h1{margin:0 0 8px}.score{font-size:48px;font-weight:800}.card{background:var(--card);border:1px solid #28334c;border-radius:12px;padding:24px;margin:16px 0}.categories{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}.category{background:#101827;border-radius:8px;padding:12px}.category span{display:block;color:var(--muted);font-size:13px}.finding{border-left:4px solid var(--medium);background:var(--card);border-radius:8px;padding:16px;margin:12px 0}.finding.high,.finding.critical{border-color:var(--high)}.finding.low{border-color:var(--low)}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#0b1020;padding:10px;border-radius:6px}code{font-family:ui-monospace,monospace}.muted{color:var(--muted)}
+:root{color-scheme:light dark;--bg:#0b1020;--card:#151c31;--text:#e9eefb;--muted:#a9b4cc;--high:#ef4444;--medium:#f59e0b;--low:#38bdf8}*{box-sizing:border-box}body{margin:0;font:15px/1.55 system-ui,sans-serif;background:var(--bg);color:var(--text)}main{max-width:960px;margin:auto;padding:32px}h1{margin:0 0 8px}.score{font-size:48px;font-weight:800}.card{background:var(--card);border:1px solid #28334c;border-radius:12px;padding:24px;margin:16px 0}.categories{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}.category{background:#101827;border-radius:8px;padding:12px}.category span{display:block;color:var(--muted);font-size:13px}.finding{border-left:4px solid var(--medium);background:var(--card);border-radius:8px;padding:16px;margin:12px 0}.finding.high,.finding.critical{border-color:var(--high)}.finding.low{border-color:var(--low)}.finding.collapsed .details{display:none}.finding:target{outline:2px solid var(--low)}header{display:flex;align-items:center;gap:12px}header strong{flex:1}.controls{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}button{font:inherit;color:var(--text);background:#101827;border:1px solid #28334c;border-radius:999px;padding:6px 12px;cursor:pointer}button[aria-pressed=true]{border-color:var(--low)}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#0b1020;padding:10px;border-radius:6px}code{font-family:ui-monospace,monospace}.muted{color:var(--muted)}
 </style></head><body><main>
 <h1>Production Checker</h1><p class="muted">${escapeHtml(result.project.root)}</p>
 <section class="card"><div class="score">${result.score.overall}/100</div><p>${escapeHtml(scoreLevel(result.score.overall))}</p><div class="categories">${categories}</div></section>
-<section><h2>Findings (${result.findings.length})</h2>${findings || '<p>No findings.</p>'}</section>
+<section><h2>Findings (${result.findings.length})</h2><div class="controls" role="group" aria-label="Filter findings by severity"><button type="button" data-severity-filter="" aria-pressed="true">All</button><button type="button" data-severity-filter="critical" aria-pressed="false">Critical</button><button type="button" data-severity-filter="high" aria-pressed="false">High</button><button type="button" data-severity-filter="medium" aria-pressed="false">Medium</button><button type="button" data-severity-filter="low" aria-pressed="false">Low</button><button type="button" data-severity-filter="info" aria-pressed="false">Info</button></div>${findings || '<p>No findings.</p>'}</section>
 <p class="muted">Files: ${result.filesAnalyzed} · Dependencies: ${result.dependenciesAnalyzed} · Scan time: ${(result.durationMs / 1000).toFixed(2)}s</p>
-</main></body></html>\n`;
+</main><script>
+const filters=document.querySelectorAll('[data-severity-filter]');
+filters.forEach((button)=>button.addEventListener('click',()=>{const severity=button.dataset.severityFilter;filters.forEach((item)=>item.setAttribute('aria-pressed',String(item===button)));document.querySelectorAll('.finding').forEach((finding)=>{finding.style.display=!severity||finding.dataset.severity===severity?'':'none';});}));
+document.querySelectorAll('.finding .toggle').forEach((button)=>button.addEventListener('click',()=>{const finding=button.closest('.finding');const collapsed=finding.classList.toggle('collapsed');button.textContent=collapsed?'Show':'Hide';button.setAttribute('aria-expanded',String(!collapsed));}));
+if(location.hash){const finding=document.querySelector(location.hash);if(finding){finding.classList.add('target');finding.scrollIntoView();}}
+</script></body></html>\n`;
 }
 
 function escapeHtml(value: string): string {

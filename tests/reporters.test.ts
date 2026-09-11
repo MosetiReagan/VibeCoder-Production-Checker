@@ -13,6 +13,8 @@ describe('reporters', () => {
     expect(sarif.runs[0].tool.driver.rules[0].helpUri).toMatch(/docs\/rules\/SEC-\d+-/);
     expect(sarif.runs[0].tool.driver.rules.find((rule: { id: string }) => rule.id === 'SEC-004').properties.tags).toContain('cwe-89');
     expect(htmlReport(result)).toContain('<!doctype html>');
+    expect(htmlReport(result)).toContain('data-severity-filter');
+    expect(htmlReport(result)).toContain('id="finding-1"');
   });
 
   it('discloses disabled rules in terminal output', async () => {
