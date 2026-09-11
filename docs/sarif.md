@@ -11,5 +11,6 @@ Production Checker emits SARIF 2.1.0 with:
 - Error/warning/note levels
 - GitHub `security-severity` properties
 - Confidence and redacted evidence in result properties
+- Rule help links, default levels, categories, and CWE tags
 
 Upload it to GitHub code scanning with `github/codeql-action/upload-sarif`.

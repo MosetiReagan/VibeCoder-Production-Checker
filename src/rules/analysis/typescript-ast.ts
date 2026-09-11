@@ -66,7 +66,13 @@ function isSqlString(expression: ts.Expression): boolean {
 }
 
 function containsDynamicValue(expression: ts.Expression): boolean {
-  if (ts.isIdentifier(expression) || ts.isCallExpression(expression)) return true;
+  if (
+    ts.isIdentifier(expression) ||
+    ts.isPropertyAccessExpression(expression) ||
+    ts.isCallExpression(expression)
+  ) {
+    return true;
+  }
   if (ts.isTemplateExpression(expression)) return expression.templateSpans.length > 0;
   if (ts.isBinaryExpression(expression)) {
     return containsDynamicValue(expression.left) || containsDynamicValue(expression.right);

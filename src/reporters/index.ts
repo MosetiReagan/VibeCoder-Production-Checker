@@ -2,6 +2,7 @@ import pc from 'picocolors';
 import type { Severity } from '../shared.js';
 import { categoryLabels, scoreLevel } from '../shared.js';
 import type { ScanResult } from '../core/types.js';
+import { getRule } from '../rules/index.js';
 
 function colorSeverity(severity: Severity, text: string): string {
   if (severity === 'critical') return pc.bold(pc.bgRed(text));
@@ -87,12 +88,21 @@ export function sarifReport(result: ScanResult): string {
     $schema: 'https://json.schemastore.org/sarif-2.1.0.json',
     version: '2.1.0',
     runs: [{
-      tool: { driver: { name: 'Production Checker', informationUri: 'https://github.com/vibecoder/production-checker', rules: rules.map((finding) => ({
-        id: finding.ruleId,
-        name: finding.title,
-        shortDescription: { text: finding.description },
-        properties: { 'security-severity': severityToSarif(finding.severity).toFixed(1) }
-      })) } },
+      tool: { driver: { name: 'Production Checker', informationUri: 'https://github.com/MosetiReagan/VibeCoder-Production-Checker', rules: rules.map((finding) => {
+        const rule = getRule(finding.ruleId);
+        return {
+          id: finding.ruleId,
+          name: finding.title,
+          shortDescription: { text: finding.description },
+          fullDescription: { text: rule?.description ?? finding.description },
+          helpUri: rule?.documentationUrl ?? ruleDocumentationUrls[finding.ruleId],
+          defaultConfiguration: { level: severityToSarifLevel(finding.severity) },
+          properties: {
+            'security-severity': severityToSarif(finding.severity).toFixed(1),
+            tags: [finding.category, ...(cweTags[finding.ruleId] ?? [])]
+          }
+        };
+      }) } },
       results: result.findings.map((finding) => ({
         ruleId: finding.ruleId,
         level: severityToSarifLevel(finding.severity),
@@ -106,6 +116,44 @@ export function sarifReport(result: ScanResult): string {
     }]
   }, null, 2)}\n`;
 }
+
+const repositoryUrl = 'https://github.com/MosetiReagan/VibeCoder-Production-Checker/blob/main/docs/rules';
+
+const ruleDocumentationUrls: Record<string, string> = Object.fromEntries([
+  ['SEC-001', 'SEC-001-hardcoded-secrets.md'],
+  ['SEC-002', 'SEC-002-env-files-tracked.md'],
+  ['SEC-003', 'SEC-003-wildcard-cors.md'],
+  ['SEC-004', 'SEC-004-sql-injection.md'],
+  ['SEC-005', 'SEC-005-command-injection.md'],
+  ['SEC-006', 'SEC-006-ssrf.md'],
+  ['SEC-007', 'SEC-007-insecure-cookies.md'],
+  ['SEC-008', 'SEC-008-rate-limiting.md'],
+  ['SEC-009', 'SEC-009-dangerous-file-uploads.md'],
+  ['REL-001', 'REL-001-exposed-stack-traces.md'],
+  ['REL-002', 'REL-002-empty-catch-blocks.md'],
+  ['CONFIG-001', 'CONFIG-001-debug-mode.md'],
+  ['CONFIG-002', 'CONFIG-002-env-validation.md'],
+  ['CONFIG-003', 'CONFIG-003-localhost.md'],
+  ['CONFIG-004', 'CONFIG-004-production-scripts.md'],
+  ['INFRA-001', 'INFRA-001-docker-root-user.md'],
+  ['INFRA-002', 'INFRA-002-docker-risky-settings.md'],
+  ['INFRA-003', 'INFRA-003-database-exposed.md'],
+  ['INFRA-004', 'INFRA-004-missing-health-checks.md'],
+  ['INFRA-005', 'INFRA-005-kubernetes-risky-settings.md'],
+  ['DEP-001', 'DEP-001-missing-lockfile.md'],
+  ['AI-001', 'AI-001-placeholder-implementation.md'],
+  ['AI-002', 'AI-002-sensitive-logging.md'],
+  ['PERF-001', 'PERF-001-sync-io.md']
+].map(([id, document]) => [id, `${repositoryUrl}/${document}`]));
+
+const cweTags: Record<string, string[]> = {
+  'SEC-001': ['cwe-798'],
+  'SEC-004': ['cwe-89'],
+  'SEC-005': ['cwe-78'],
+  'SEC-006': ['cwe-918'],
+  'SEC-007': ['cwe-614', 'cwe-1004'],
+  'INFRA-001': ['cwe-250']
+};
 
 function severityToSarif(severity: Severity): number {
   return { critical: 9.5, high: 8, medium: 5.5, low: 3, info: 1 }[severity];
