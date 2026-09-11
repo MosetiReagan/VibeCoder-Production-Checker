@@ -15,7 +15,11 @@ describe('GitHub Action bundle', () => {
     expect(secure.status).toBe(0);
 
     const vulnerable = spawnSync(process.execPath, ['action/index.js'], {
-      env: { ...process.env, INPUT_PATH: 'tests/fixtures/insecure-node-app', 'INPUT_FAIL-ON': 'high' }
+      env: {
+        ...process.env,
+        INPUT_PATH: 'tests/fixtures/insecure-node-app',
+        'INPUT_FAIL-ON': 'high'
+      }
     });
     expect(vulnerable.status).toBe(1);
   });

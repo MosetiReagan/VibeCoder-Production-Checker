@@ -19,9 +19,7 @@ export function findUnsafeSqlExecutions(file: SourceFile): AstFinding[] {
     file.content,
     ts.ScriptTarget.Latest,
     true,
-    file.extension === '.ts' || file.extension === '.tsx'
-      ? ts.ScriptKind.TS
-      : ts.ScriptKind.JS
+    file.extension === '.ts' || file.extension === '.tsx' ? ts.ScriptKind.TS : ts.ScriptKind.JS
   );
   const dynamicSqlVariables = new Map<string, ts.Expression>();
   const findings: AstFinding[] = [];
@@ -59,7 +57,10 @@ function isDynamicSql(expression: ts.Expression): boolean {
 function isSqlString(expression: ts.Expression): boolean {
   if (ts.isStringLiteral(expression)) return sqlKeywords.test(expression.text);
   if (ts.isTemplateExpression(expression)) return sqlKeywords.test(expression.head.text);
-  if (ts.isBinaryExpression(expression) && expression.operatorToken.kind === ts.SyntaxKind.PlusToken) {
+  if (
+    ts.isBinaryExpression(expression) &&
+    expression.operatorToken.kind === ts.SyntaxKind.PlusToken
+  ) {
     return isSqlString(expression.left);
   }
   return false;

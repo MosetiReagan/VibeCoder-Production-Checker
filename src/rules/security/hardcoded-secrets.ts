@@ -12,11 +12,13 @@ const secretPatterns = [
 export const hardcodedSecrets = createRule({
   id: 'SEC-001',
   title: 'Hardcoded secret detected',
-  description: 'Finds credentials, private keys, and provider tokens embedded in source or configuration.',
+  description:
+    'Finds credentials, private keys, and provider tokens embedded in source or configuration.',
   category: 'security',
   severity: 'high',
   confidence: 'high',
-  documentationUrl: 'https://github.com/vibecoder/production-checker/blob/main/docs/rules/SEC-001-hardcoded-secrets.md',
+  documentationUrl:
+    'https://github.com/vibecoder/production-checker/blob/main/docs/rules/SEC-001-hardcoded-secrets.md',
   async run(context) {
     return scanLines(context, secretPatterns, (file, line, text, match) => {
       if (file === '.env.example') return null;
@@ -33,7 +35,8 @@ export const hardcodedSecrets = createRule({
         evidence,
         description: 'A likely credential is embedded directly in a scanned file.',
         impact: 'Anyone with repository access may obtain and reuse the credential.',
-        recommendation: 'Move the value to a secret manager or validated environment variable, remove it from history, and rotate the exposed credential.'
+        recommendation:
+          'Move the value to a secret manager or validated environment variable, remove it from history, and rotate the exposed credential.'
       });
     });
   }

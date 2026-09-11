@@ -23,7 +23,9 @@ export function calculateScore(findings: Finding[], disabledRules: string[] = []
     categoryFindings[scoringCategory] = [...(categoryFindings[scoringCategory] ?? []), finding];
   }
   const penalties: Partial<Record<Category, number>> = {};
-  for (const [category, items] of Object.entries(categoryFindings) as Array<[Category, Finding[]]>) {
+  for (const [category, items] of Object.entries(categoryFindings) as Array<
+    [Category, Finding[]]
+  >) {
     penalties[category] = items.reduce((sum, finding) => sum + weights[finding.severity], 0);
   }
   for (const ruleId of disabledRules) {

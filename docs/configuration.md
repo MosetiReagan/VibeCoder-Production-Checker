@@ -39,7 +39,7 @@ IDEs can autocomplete the file with the published JSON Schema:
 - `confidence`: confidence override
 - `exclude`: additional directories or exact file paths
 - `failOn`: default CI threshold
- - `cache`: persist scan results between unchanged runs (default: `true`)
+- `cache`: persist scan results between unchanged runs (default: `true`)
 
 Set `cache` to `false` for one-off audits or when you want every run to execute every rule. Cached scans are keyed by project files, modification times, configuration, and rule metadata.
 

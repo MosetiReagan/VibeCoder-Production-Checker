@@ -27,7 +27,9 @@ export function detectProject(root: string, files: SourceFile[]): ProjectInfo {
   if (files.some((file) => file.relativePath === 'manage.py')) frameworks.push('Django');
   if (files.some((file) => file.relativePath === 'artisan')) frameworks.push('Laravel');
   if (files.some((file) => file.relativePath === 'config/application.rb')) frameworks.push('Rails');
-  if (files.some((file) => file.relativePath === 'pom.xml' || file.relativePath === 'build.gradle')) {
+  if (
+    files.some((file) => file.relativePath === 'pom.xml' || file.relativePath === 'build.gradle')
+  ) {
     frameworks.push('Spring');
   }
   const packageManager = fs.existsSync(path.join(root, 'pnpm-lock.yaml'))

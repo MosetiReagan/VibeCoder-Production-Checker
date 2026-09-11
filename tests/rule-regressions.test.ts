@@ -43,7 +43,10 @@ describe('rule regression coverage', () => {
   it('detects SQL built separately from query execution', async () => {
     const { sqlInjection } = await import('../src/rules/security/sql-injection.js');
     const findings = await runRule(sqlInjection, [
-      createSourceFile('src/db.ts', `const sql = "SELECT * FROM users WHERE id = " + userId;\ndb.query(sql);`)
+      createSourceFile(
+        'src/db.ts',
+        `const sql = "SELECT * FROM users WHERE id = " + userId;\ndb.query(sql);`
+      )
     ]);
     expect(findings).toHaveLength(1);
     expect(findings[0].line).toBe(2);
@@ -52,7 +55,10 @@ describe('rule regression coverage', () => {
   it('uses the AST for JavaScript SQL construction', async () => {
     const { sqlInjection } = await import('../src/rules/security/sql-injection.js');
     const findings = await runRule(sqlInjection, [
-      createSourceFile('src/db.ts', 'const sql = `SELECT * FROM users WHERE id = ${userId}`;\ndb.query(sql);')
+      createSourceFile(
+        'src/db.ts',
+        'const sql = `SELECT * FROM users WHERE id = ${userId}`;\ndb.query(sql);'
+      )
     ]);
     expect(findings).toHaveLength(1);
     expect(findings[0].evidence).toContain('db.query(sql)');
@@ -61,7 +67,10 @@ describe('rule regression coverage', () => {
   it('keeps parameterized SQL quiet', async () => {
     const { sqlInjection } = await import('../src/rules/security/sql-injection.js');
     const findings = await runRule(sqlInjection, [
-      createSourceFile('src/db.ts', `const sql = 'SELECT * FROM users WHERE id = $1';\ndb.query(sql, [userId]);`)
+      createSourceFile(
+        'src/db.ts',
+        `const sql = 'SELECT * FROM users WHERE id = $1';\ndb.query(sql, [userId]);`
+      )
     ]);
     expect(findings).toHaveLength(0);
   });
@@ -99,7 +108,10 @@ describe('rule regression coverage', () => {
     const findings = await runRule(missingRateLimiting, [
       createSourceFile('package.json', '{"dependencies":{"@nestjs/throttler":"^6.0.0"}}'),
       createSourceFile('src/routes.ts', `app.post('/login', loginHandler);`),
-      createSourceFile('src/reset.ts', `loginRateLimiter,\napp.post('/password-reset', resetHandler);`)
+      createSourceFile(
+        'src/reset.ts',
+        `loginRateLimiter,\napp.post('/password-reset', resetHandler);`
+      )
     ]);
     expect(findings).toHaveLength(1);
     expect(findings[0].file).toBe('src/routes.ts');
@@ -109,7 +121,10 @@ describe('rule regression coverage', () => {
     const { hardcodedSecrets } = await import('../src/rules/security/hardcoded-secrets.js');
     const secret = 'sk-test-1234567890abcdefghij';
     const findings = await runRule(hardcodedSecrets, [
-      createSourceFile('src/config.ts', `const apiKey = "${secret}"; const backupKey = "${secret}";`)
+      createSourceFile(
+        'src/config.ts',
+        `const apiKey = "${secret}"; const backupKey = "${secret}";`
+      )
     ]);
     expect(findings).toHaveLength(1);
     expect(findings[0].evidence).not.toContain(secret);
@@ -119,7 +134,10 @@ describe('rule regression coverage', () => {
   it('keeps health acknowledgements out of placeholder findings', async () => {
     const { placeholderImplementation } = await import('../src/rules/ai/placeholders.js');
     const findings = await runRule(placeholderImplementation, [
-      createSourceFile('src/api/healthcheck.ts', `export function health() {\n  return { success: true };\n}`)
+      createSourceFile(
+        'src/api/healthcheck.ts',
+        `export function health() {\n  return { success: true };\n}`
+      )
     ]);
     expect(findings).toHaveLength(0);
   });
@@ -127,7 +145,10 @@ describe('rule regression coverage', () => {
   it('detects placeholder payment handlers using nearby context', async () => {
     const { placeholderImplementation } = await import('../src/rules/ai/placeholders.js');
     const findings = await runRule(placeholderImplementation, [
-      createSourceFile('src/routes/status.ts', `export async function processPayment() {\n  return { success: true };\n}`)
+      createSourceFile(
+        'src/routes/status.ts',
+        `export async function processPayment() {\n  return { success: true };\n}`
+      )
     ]);
     expect(findings).toHaveLength(1);
     expect(findings[0].confidence).toBe('medium');
@@ -184,14 +205,19 @@ describe('rule regression coverage', () => {
   it('checks framework production configuration for localhost', async () => {
     const { localhostConfiguration } = await import('../src/rules/configuration/localhost.js');
     const findings = await runRule(localhostConfiguration, [
-      createSourceFile('next.config.js', "module.exports = { assetPrefix: 'http://localhost:3000' };")
+      createSourceFile(
+        'next.config.js',
+        "module.exports = { assetPrefix: 'http://localhost:3000' };"
+      )
     ]);
     expect(findings).toHaveLength(1);
   });
 
   it('checks nested environment files against precise ignore patterns', async () => {
     const { envFilesTracked } = await import('../src/rules/security/env-files.js');
-    const files = [createSourceFile('packages/api/.env.local', 'DATABASE_URL=postgres://example\n')];
+    const files = [
+      createSourceFile('packages/api/.env.local', 'DATABASE_URL=postgres://example\n')
+    ];
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'production-check-env-'));
     fs.mkdirSync(path.join(root, '.git'), { recursive: true });
     const context = { ...createContext(files), root };
@@ -206,7 +232,9 @@ describe('rule regression coverage', () => {
 
   it('reports missing health checks without inventing a source location', async () => {
     const { missingHealthChecks } = await import('../src/rules/infrastructure/health.js');
-    const findings = await runRule(missingHealthChecks, [createSourceFile('src/server.ts', 'app.listen(3000);')]);
+    const findings = await runRule(missingHealthChecks, [
+      createSourceFile('src/server.ts', 'app.listen(3000);')
+    ]);
     expect(findings).toHaveLength(1);
     expect(findings[0].file).toBe('(no Dockerfile)');
     expect(findings[0].line).toBe(0);
@@ -223,7 +251,10 @@ describe('rule regression coverage', () => {
 
   it('honors source metadata for documentation exclusions', async () => {
     const { hardcodedSecrets } = await import('../src/rules/security/hardcoded-secrets.js');
-    const documentation = createSourceFile('src/architecture.md', 'API_KEY="documentation-example-secret"');
+    const documentation = createSourceFile(
+      'src/architecture.md',
+      'API_KEY="documentation-example-secret"'
+    );
     documentation.isDocs = true;
     const findings = await runRule(hardcodedSecrets, [documentation]);
     expect(findings).toHaveLength(0);

@@ -78,9 +78,9 @@ function isValidResult(value: unknown): value is ScanResult {
   const result = value as ScanResult | undefined;
   return Boolean(
     result?.project &&
-      Array.isArray(result?.findings) &&
-      result?.score &&
-      typeof result?.filesAnalyzed === 'number' &&
-      typeof result?.dependenciesAnalyzed === 'number'
+    Array.isArray(result?.findings) &&
+    result?.score &&
+    typeof result?.filesAnalyzed === 'number' &&
+    typeof result?.dependenciesAnalyzed === 'number'
   );
 }

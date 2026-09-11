@@ -7,12 +7,12 @@ Scores are deterministic and based only on findings emitted by enabled rules.
 Each category starts at 100. Findings subtract:
 
 | Severity | Penalty |
-|---|---:|
-| Critical | 45 |
-| High | 22 |
-| Medium | 9 |
-| Low | 3 |
-| Info | 0 |
+| -------- | ------: |
+| Critical |      45 |
+| High     |      22 |
+| Medium   |       9 |
+| Low      |       3 |
+| Info     |       0 |
 
 A category cannot fall below 0. Penalties are capped at 75 per category, ensuring multiple low-severity findings cannot make a category worse than one critical finding and that a severe issue still leaves room for measurable improvement.
 

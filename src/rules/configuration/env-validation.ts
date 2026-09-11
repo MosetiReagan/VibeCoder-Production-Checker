@@ -16,25 +16,33 @@ export const envValidation = createRule({
     if (hasValidation) return [];
     const findings = [];
     const seen = new Set<string>();
-    for (const file of context.files.filter((item) => item.relativePath === 'package.json' ? false : item.extension === '.ts' || item.extension === '.js')) {
+    for (const file of context.files.filter((item) =>
+      item.relativePath === 'package.json'
+        ? false
+        : item.extension === '.ts' || item.extension === '.js'
+    )) {
       for (const [index, line] of file.lines.entries()) {
         for (const match of line.matchAll(envVarPattern)) {
           const key = `${file.relativePath}:${match[1]}`;
           if (seen.has(key)) continue;
           seen.add(key);
-          findings.push(createFinding({
-            ruleId: this.id,
-            title: this.title,
-            severity: this.severity,
-            confidence: this.confidence,
-            category: this.category,
-            file: file.relativePath,
-            line: index + 1,
-            evidence: line.trim().slice(0, 180),
-            description: `Environment variable ${match[1]} is accessed directly and no environment validation was detected.`,
-            impact: 'Invalid, missing, or partially configured environments can fail at runtime or silently enable insecure defaults.',
-            recommendation: 'Validate required variables at startup with Zod, envalid, dotenv-safe, or your framework schema.'
-          }));
+          findings.push(
+            createFinding({
+              ruleId: this.id,
+              title: this.title,
+              severity: this.severity,
+              confidence: this.confidence,
+              category: this.category,
+              file: file.relativePath,
+              line: index + 1,
+              evidence: line.trim().slice(0, 180),
+              description: `Environment variable ${match[1]} is accessed directly and no environment validation was detected.`,
+              impact:
+                'Invalid, missing, or partially configured environments can fail at runtime or silently enable insecure defaults.',
+              recommendation:
+                'Validate required variables at startup with Zod, envalid, dotenv-safe, or your framework schema.'
+            })
+          );
         }
       }
     }

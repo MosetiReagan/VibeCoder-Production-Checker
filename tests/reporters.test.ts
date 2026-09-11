@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { scanProject } from '../src/index.js';
-import { conciseReport, htmlReport, jsonReport, markdownReport, sarifReport, terminalReport } from '../src/reporters/index.js';
+import {
+  conciseReport,
+  htmlReport,
+  jsonReport,
+  markdownReport,
+  sarifReport,
+  terminalReport
+} from '../src/reporters/index.js';
 
 describe('reporters', () => {
   it('produces valid machine-readable reports', async () => {
@@ -11,7 +18,10 @@ describe('reporters', () => {
     expect(sarif.version).toBe('2.1.0');
     expect(sarif.runs[0].results.length).toBe(result.findings.length);
     expect(sarif.runs[0].tool.driver.rules[0].helpUri).toMatch(/docs\/rules\/SEC-\d+-/);
-    expect(sarif.runs[0].tool.driver.rules.find((rule: { id: string }) => rule.id === 'SEC-004').properties.tags).toContain('cwe-89');
+    expect(
+      sarif.runs[0].tool.driver.rules.find((rule: { id: string }) => rule.id === 'SEC-004')
+        .properties.tags
+    ).toContain('cwe-89');
     expect(htmlReport(result)).toContain('<!doctype html>');
     expect(htmlReport(result)).toContain('data-severity-filter');
     expect(htmlReport(result)).toContain('id="finding-1"');

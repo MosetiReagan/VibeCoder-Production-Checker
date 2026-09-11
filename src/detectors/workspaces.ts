@@ -34,7 +34,9 @@ function packageJsonPatterns(root: string): string[] {
 
 function pnpmPatterns(root: string): string[] {
   try {
-    const document = YAML.parse(fs.readFileSync(path.join(root, 'pnpm-workspace.yaml'), 'utf8')) as {
+    const document = YAML.parse(
+      fs.readFileSync(path.join(root, 'pnpm-workspace.yaml'), 'utf8')
+    ) as {
       packages?: string[];
     };
     return document.packages ?? [];

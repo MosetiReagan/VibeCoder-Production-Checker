@@ -3,8 +3,28 @@ import path from 'node:path';
 import type { SourceFile } from '../shared.js';
 
 const textExtensions = new Set([
-  '.js', '.jsx', '.mjs', '.cjs', '.ts', '.tsx', '.json', '.md', '.yml', '.yaml', '.env', '.example',
-  '.py', '.php', '.rb', '.go', '.java', '.txt', '.dockerfile', '.conf', '.ini', '.toml'
+  '.js',
+  '.jsx',
+  '.mjs',
+  '.cjs',
+  '.ts',
+  '.tsx',
+  '.json',
+  '.md',
+  '.yml',
+  '.yaml',
+  '.env',
+  '.example',
+  '.py',
+  '.php',
+  '.rb',
+  '.go',
+  '.java',
+  '.txt',
+  '.dockerfile',
+  '.conf',
+  '.ini',
+  '.toml'
 ]);
 const maxFileSize = 2 * 1024 * 1024;
 
@@ -41,7 +61,8 @@ export function discoverFiles(root: string, excludes: string[]): SourceFile[] {
         if (stat.size > maxFileSize || stat.size === 0) continue;
         const extension = path.extname(entry.name).toLowerCase();
         const baseName = path.basename(entry.name).toLowerCase();
-        const text = textExtensions.has(extension) || baseName === 'dockerfile' || baseName.startsWith('.env');
+        const text =
+          textExtensions.has(extension) || baseName === 'dockerfile' || baseName.startsWith('.env');
         if (!text) continue;
         let content: string;
         try {

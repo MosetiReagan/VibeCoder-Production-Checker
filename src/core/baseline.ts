@@ -40,7 +40,9 @@ export function applyBaseline(result: ScanResult, baselinePath: string): ScanRes
   try {
     baseline = JSON.parse(fs.readFileSync(baselinePath, 'utf8')) as BaselineFile;
   } catch (error) {
-    throw new Error(`Unable to read baseline ${baselinePath}: ${error instanceof Error ? error.message : String(error)}`);
+    throw new Error(
+      `Unable to read baseline ${baselinePath}: ${error instanceof Error ? error.message : String(error)}`
+    );
   }
   if (baseline.version !== 1 || !Array.isArray(baseline.findings)) {
     throw new Error('Invalid baseline: expected version 1 with a findings array');

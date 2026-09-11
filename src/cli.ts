@@ -7,7 +7,14 @@ import { scanProject, scanWorkspaces } from './core/scanner.js';
 import { explainScores, findingsMeetThreshold } from './core/scoring.js';
 import { applyBaseline, createBaseline } from './core/baseline.js';
 import { initializeConfig } from './core/init.js';
-import { conciseReport, htmlReport, jsonReport, markdownReport, sarifReport, terminalReport } from './reporters/index.js';
+import {
+  conciseReport,
+  htmlReport,
+  jsonReport,
+  markdownReport,
+  sarifReport,
+  terminalReport
+} from './reporters/index.js';
 import { getRule } from './rules/index.js';
 import type { Severity } from './shared.js';
 import { severityRank } from './shared.js';
@@ -16,7 +23,8 @@ import type { ScanResult } from './core/types.js';
 const severities = ['critical', 'high', 'medium', 'low', 'info'];
 
 function severity(value: string): Severity {
-  if (!severities.includes(value)) throw new InvalidArgumentError('Must be critical, high, medium, low, or info');
+  if (!severities.includes(value))
+    throw new InvalidArgumentError('Must be critical, high, medium, low, or info');
   return value as Severity;
 }
 
@@ -36,50 +44,70 @@ program
   .option('--workspaces', 'scan every detected workspace separately')
   .option('-q, --quiet', 'print findings only')
   .option('--no-color', 'disable colored terminal output')
-  .action(async (target: string, options: { format: string; output?: string; html?: string; ci?: boolean; failOn?: Severity; baseline?: string; workspace?: string; workspaces?: boolean; quiet?: boolean; noColor?: boolean }) => {
-    try {
-      if (options.workspaces) {
-        const results = await scanWorkspaces({ path: target });
-        const combined = combineWorkspaceResults(results);
-        const reportedResults = options.baseline
-          ? results.map((result) => applyBaseline(result, options.baseline as string))
-          : results;
-        const reportedCombined = options.baseline ? combineWorkspaceResults(reportedResults) : combined;
-        await writeWorkspaceOutput(options, reportedCombined, reportedResults);
-        const failOn = options.failOn ?? combined.config.failOn;
-        if (options.ci && failOn && findingsMeetThreshold(reportedCombined.findings, failOn)) {
+  .action(
+    async (
+      target: string,
+      options: {
+        format: string;
+        output?: string;
+        html?: string;
+        ci?: boolean;
+        failOn?: Severity;
+        baseline?: string;
+        workspace?: string;
+        workspaces?: boolean;
+        quiet?: boolean;
+        noColor?: boolean;
+      }
+    ) => {
+      try {
+        if (options.workspaces) {
+          const results = await scanWorkspaces({ path: target });
+          const combined = combineWorkspaceResults(results);
+          const reportedResults = options.baseline
+            ? results.map((result) => applyBaseline(result, options.baseline as string))
+            : results;
+          const reportedCombined = options.baseline
+            ? combineWorkspaceResults(reportedResults)
+            : combined;
+          await writeWorkspaceOutput(options, reportedCombined, reportedResults);
+          const failOn = options.failOn ?? combined.config.failOn;
+          if (options.ci && failOn && findingsMeetThreshold(reportedCombined.findings, failOn)) {
+            process.stderr.write(`Failing because findings meet or exceed ${failOn}\n`);
+            process.exitCode = 1;
+          }
+          return;
+        }
+        const result = await scanProject({ path: target, workspace: options.workspace });
+        const reportedResult = options.baseline ? applyBaseline(result, options.baseline) : result;
+        if (options.html) await fs.writeFile(options.html, htmlReport(reportedResult), 'utf8');
+        const format = options.format.toLowerCase();
+        if (options.output) {
+          const content = reportFor(format, reportedResult, options.ci === true);
+          await fs.writeFile(options.output, content, 'utf8');
+        }
+        if (format !== 'terminal' && !options.output) {
+          process.stdout.write(reportFor(format, reportedResult, options.ci === true));
+        } else if (format === 'terminal' && !options.output) {
+          process.stdout.write(
+            options.ci || options.quiet
+              ? `${conciseReport(reportedResult)}\n`
+              : `${terminalReport(reportedResult, options.noColor === true)}\n`
+          );
+        }
+        const failOn = options.failOn ?? result.config.failOn;
+        if (options.ci && failOn && findingsMeetThreshold(reportedResult.findings, failOn)) {
           process.stderr.write(`Failing because findings meet or exceed ${failOn}\n`);
           process.exitCode = 1;
         }
-        return;
-      }
-      const result = await scanProject({ path: target, workspace: options.workspace });
-      const reportedResult = options.baseline ? applyBaseline(result, options.baseline) : result;
-      if (options.html) await fs.writeFile(options.html, htmlReport(reportedResult), 'utf8');
-      const format = options.format.toLowerCase();
-      if (options.output) {
-        const content = reportFor(format, reportedResult, options.ci === true);
-        await fs.writeFile(options.output, content, 'utf8');
-      }
-      if (format !== 'terminal' && !options.output) {
-        process.stdout.write(reportFor(format, reportedResult, options.ci === true));
-      } else if (format === 'terminal' && !options.output) {
-        process.stdout.write(
-          options.ci || options.quiet
-            ? `${conciseReport(reportedResult)}\n`
-            : `${terminalReport(reportedResult, options.noColor === true)}\n`
+      } catch (error) {
+        process.stderr.write(
+          `${pc.red('Error:')} ${error instanceof Error ? error.message : String(error)}\n`
         );
-      }
-      const failOn = options.failOn ?? result.config.failOn;
-      if (options.ci && failOn && findingsMeetThreshold(reportedResult.findings, failOn)) {
-        process.stderr.write(`Failing because findings meet or exceed ${failOn}\n`);
         process.exitCode = 1;
       }
-    } catch (error) {
-      process.stderr.write(`${pc.red('Error:')} ${error instanceof Error ? error.message : String(error)}\n`);
-      process.exitCode = 1;
     }
-  });
+  );
 
 program
   .command('init')
@@ -112,29 +140,31 @@ program
     const findings = options.find
       ? (await scanProject({ path: '.' })).findings.filter((finding) => finding.ruleId === rule.id)
       : [];
-    process.stdout.write([
-      `Rule ${rule.id}`,
-      rule.title,
-      '',
-      `Severity: ${rule.severity}`,
-      `Default confidence: ${rule.confidence}`,
-      '',
-      'Why it matters:',
-      rule.description,
-      '',
-      ...(options.find
-        ? [
-            'Detected in:',
-            ...(findings.length
-              ? findings.map((finding) => `${finding.file}:${finding.line}\n${finding.evidence}`)
-              : ['No current findings.']),
-            ''
-          ]
-        : []),
-      '',
-      'Recommended fix:',
-      findings[0]?.recommendation ?? rule.description
-    ].join('\n') + '\n');
+    process.stdout.write(
+      [
+        `Rule ${rule.id}`,
+        rule.title,
+        '',
+        `Severity: ${rule.severity}`,
+        `Default confidence: ${rule.confidence}`,
+        '',
+        'Why it matters:',
+        rule.description,
+        '',
+        ...(options.find
+          ? [
+              'Detected in:',
+              ...(findings.length
+                ? findings.map((finding) => `${finding.file}:${finding.line}\n${finding.evidence}`)
+                : ['No current findings.']),
+              ''
+            ]
+          : []),
+        '',
+        'Recommended fix:',
+        findings[0]?.recommendation ?? rule.description
+      ].join('\n') + '\n'
+    );
   });
 
 program
@@ -147,7 +177,11 @@ program
 
 program.parseAsync();
 
-function reportFor(format: string, result: Awaited<ReturnType<typeof scanProject>>, concise: boolean): string {
+function reportFor(
+  format: string,
+  result: Awaited<ReturnType<typeof scanProject>>,
+  concise: boolean
+): string {
   if (format === 'json') return jsonReport(result);
   if (format === 'markdown') return markdownReport(result);
   if (format === 'sarif') return sarifReport(result);
@@ -162,7 +196,9 @@ function combineWorkspaceResults(results: ScanResult[]): ScanResult {
       file: `${result.workspace}/${finding.file}`
     }))
   );
-  const overall = Math.round(results.reduce((sum, result) => sum + result.score.overall, 0) / results.length);
+  const overall = Math.round(
+    results.reduce((sum, result) => sum + result.score.overall, 0) / results.length
+  );
   return {
     ...results[0],
     project: { ...results[0].project, root: path.dirname(results[0].project.root) },
@@ -198,7 +234,9 @@ function workspaceContent(
   if (options.format === 'json') return `${JSON.stringify(results, null, 2)}\n`;
   if (options.format === 'sarif') return sarifReport(combined);
   if (options.format === 'markdown') {
-    return results.map((result) => `## Workspace: ${result.workspace}\n\n${markdownReport(result)}`).join('\n');
+    return results
+      .map((result) => `## Workspace: ${result.workspace}\n\n${markdownReport(result)}`)
+      .join('\n');
   }
   if (options.ci) {
     const lines = results.flatMap((result) =>
@@ -210,7 +248,10 @@ function workspaceContent(
     return `${lines.join('\n') || 'No findings'}\n`;
   }
   return results
-    .map((result) => `Workspace: ${result.workspace}\n${terminalReport(result, options.noColor === true)}`)
+    .map(
+      (result) =>
+        `Workspace: ${result.workspace}\n${terminalReport(result, options.noColor === true)}`
+    )
     .join('\n\n');
 }
 

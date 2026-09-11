@@ -16,25 +16,26 @@ export const sqlInjection = createRule({
   severity: 'high',
   confidence: 'medium',
   async run(context) {
-    const astFindings = context.files
-      .filter(isJavaScriptLike)
-      .flatMap((file) =>
-        findUnsafeSqlExecutions(file).map((finding) =>
-          createFinding({
-            ruleId: this.id,
-            title: this.title,
-            severity: this.severity,
-            confidence: this.confidence,
-            category: this.category,
-            file: file.relativePath,
-            line: finding.line,
-            evidence: trimEvidence(finding.evidence),
-            description: 'A SQL statement appears to be constructed by concatenation or interpolation.',
-            impact: 'If the interpolated value is attacker-controlled, SQL injection can expose or modify application data.',
-            recommendation: 'Use parameterized queries or the query-builder APIs provided by Prisma, Drizzle, Sequelize, TypeORM, or Knex.'
-          })
-        )
-      );
+    const astFindings = context.files.filter(isJavaScriptLike).flatMap((file) =>
+      findUnsafeSqlExecutions(file).map((finding) =>
+        createFinding({
+          ruleId: this.id,
+          title: this.title,
+          severity: this.severity,
+          confidence: this.confidence,
+          category: this.category,
+          file: file.relativePath,
+          line: finding.line,
+          evidence: trimEvidence(finding.evidence),
+          description:
+            'A SQL statement appears to be constructed by concatenation or interpolation.',
+          impact:
+            'If the interpolated value is attacker-controlled, SQL injection can expose or modify application data.',
+          recommendation:
+            'Use parameterized queries or the query-builder APIs provided by Prisma, Drizzle, Sequelize, TypeORM, or Knex.'
+        })
+      )
+    );
     const legacyFiles = context.files.filter((file) => !isJavaScriptLike(file));
     const legacyContext = { ...context, files: legacyFiles };
     const legacyFindings = scanLines(legacyContext, unsafeSql, (file, line, text, match) => {
@@ -49,14 +50,20 @@ export const sqlInjection = createRule({
           file,
           line,
           evidence: trimEvidence(text),
-          description: 'A SQL statement appears to be constructed by concatenation or interpolation.',
-          impact: 'If the interpolated value is attacker-controlled, SQL injection can expose or modify application data.',
-          recommendation: 'Use parameterized queries or the query-builder APIs provided by Prisma, Drizzle, Sequelize, TypeORM, or Knex.'
+          description:
+            'A SQL statement appears to be constructed by concatenation or interpolation.',
+          impact:
+            'If the interpolated value is attacker-controlled, SQL injection can expose or modify application data.',
+          recommendation:
+            'Use parameterized queries or the query-builder APIs provided by Prisma, Drizzle, Sequelize, TypeORM, or Knex.'
         });
       }
-      const isQueried = legacyContext.files.some((scannedFile) =>
-        scannedFile.relativePath === file &&
-        new RegExp(`\\b(?:query|execute|raw|all|get)\\s*\\(\\s*${variableName}\\b`).test(scannedFile.content)
+      const isQueried = legacyContext.files.some(
+        (scannedFile) =>
+          scannedFile.relativePath === file &&
+          new RegExp(`\\b(?:query|execute|raw|all|get)\\s*\\(\\s*${variableName}\\b`).test(
+            scannedFile.content
+          )
       );
       if (!isQueried) return null;
       return createFinding({
@@ -69,8 +76,10 @@ export const sqlInjection = createRule({
         line,
         evidence: trimEvidence(text),
         description: 'A SQL statement appears to be constructed by concatenation or interpolation.',
-        impact: 'If the interpolated value is attacker-controlled, SQL injection can expose or modify application data.',
-        recommendation: 'Use parameterized queries or the query-builder APIs provided by Prisma, Drizzle, Sequelize, TypeORM, or Knex.'
+        impact:
+          'If the interpolated value is attacker-controlled, SQL injection can expose or modify application data.',
+        recommendation:
+          'Use parameterized queries or the query-builder APIs provided by Prisma, Drizzle, Sequelize, TypeORM, or Knex.'
       });
     });
     return [...astFindings, ...legacyFindings];

@@ -2,7 +2,9 @@ import { findingsMeetThreshold, scanProject } from '../../src/index.js';
 import { conciseReport } from '../../src/reporters/index.js';
 
 const path = process.env.INPUT_PATH ?? '.';
-const failOn = (process.env['INPUT_FAIL-ON'] ?? 'high') as Parameters<typeof findingsMeetThreshold>[1];
+const failOn = (process.env['INPUT_FAIL-ON'] ?? 'high') as Parameters<
+  typeof findingsMeetThreshold
+>[1];
 
 void (async () => {
   try {

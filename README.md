@@ -95,15 +95,15 @@ node dist/cli.js tests/fixtures/insecure-node-app
 
 ## Supported checks
 
-| Category | Examples |
-|---|---|
-| Security | Hardcoded credentials, tracked `.env` files, wildcard CORS, unsafe SQL, command construction, SSRF, insecure cookies, missing visible rate limiting |
-| Reliability | Stack traces returned to clients, ignored catch blocks |
-| Configuration | Development/debug settings, missing environment validation |
-| Infrastructure | Docker root user, privileged containers, Docker socket, host networking, `latest` tags, database port exposure, missing health checks |
-| Dependencies | Missing lockfiles |
-| Performance | Synchronous filesystem I/O in likely request handlers |
-| Production hygiene | Placeholder implementations, suspicious TODOs, sensitive logging |
+| Category           | Examples                                                                                                                                            |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Security           | Hardcoded credentials, tracked `.env` files, wildcard CORS, unsafe SQL, command construction, SSRF, insecure cookies, missing visible rate limiting |
+| Reliability        | Stack traces returned to clients, ignored catch blocks                                                                                              |
+| Configuration      | Development/debug settings, missing environment validation                                                                                          |
+| Infrastructure     | Docker root user, privileged containers, Docker socket, host networking, `latest` tags, database port exposure, missing health checks               |
+| Dependencies       | Missing lockfiles                                                                                                                                   |
+| Performance        | Synchronous filesystem I/O in likely request handlers                                                                                               |
+| Production hygiene | Placeholder implementations, suspicious TODOs, sensitive logging                                                                                    |
 
 Production Checker uses evidence and confidence rather than claiming certainty. Static analysis cannot prove authorization correctness, network topology, or every runtime control.
 
@@ -117,13 +117,13 @@ Python and PHP projects receive project discovery and a practical subset of prod
 
 Each category starts at 100. Findings subtract fixed, documented penalties: critical 45, high 22, medium 9, low 3, and info 0. Category penalties are capped at 75 so a project can always recover through other practices. The overall score is the average of applicable category scores.
 
-| Range | Level |
-|---:|---|
+|  Range | Level            |
+| -----: | ---------------- |
 | 90–100 | Production Ready |
-| 80–89 | Mostly Ready |
-| 70–79 | Needs Attention |
-| 50–69 | High Risk |
-| 0–49 | Not Ready |
+|  80–89 | Mostly Ready     |
+|  70–79 | Needs Attention  |
+|  50–69 | High Risk        |
+|   0–49 | Not Ready        |
 
 Run `production-check score` for counts and category explanations. Full methodology: [docs/scoring.md](docs/scoring.md).
 

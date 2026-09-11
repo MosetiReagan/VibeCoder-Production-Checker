@@ -11,7 +11,8 @@ const placeholderPatterns = [
 export const placeholderImplementation = createRule({
   id: 'AI-001',
   title: 'Potential placeholder implementation',
-  description: 'Identifies suspicious success responses, TODO operations, and placeholder credentials.',
+  description:
+    'Identifies suspicious success responses, TODO operations, and placeholder credentials.',
   category: 'ai-generated',
   severity: 'medium',
   confidence: 'medium',
@@ -21,7 +22,9 @@ export const placeholderImplementation = createRule({
       if (/health|ready|livez|readyz|webhook|callback/i.test(file)) return null;
       const sourceFile = context.files.find((item) => item.relativePath === file);
       const nearby = sourceFile?.lines.slice(Math.max(0, line - 16), line + 5).join('\n') ?? text;
-      const operational = /(payment|charge|login|auth|save|create|delete|update|database)/i.test(nearby);
+      const operational = /(payment|charge|login|auth|save|create|delete|update|database)/i.test(
+        nearby
+      );
       return createFinding({
         ruleId: this.id,
         title: this.title,
@@ -34,8 +37,10 @@ export const placeholderImplementation = createRule({
         description: operational
           ? 'An operation-like handler appears to return success without a visible external or database operation.'
           : 'A placeholder marker or hardcoded example value was found in production-relevant source.',
-        impact: 'Users can receive misleading success responses while the intended business operation never occurred.',
-        recommendation: 'Implement the real operation, return an explicit not-implemented error until it exists, and use tests to verify database or provider effects.'
+        impact:
+          'Users can receive misleading success responses while the intended business operation never occurred.',
+        recommendation:
+          'Implement the real operation, return an explicit not-implemented error until it exists, and use tests to verify database or provider effects.'
       });
     });
   }

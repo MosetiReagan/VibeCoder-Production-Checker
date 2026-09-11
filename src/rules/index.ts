@@ -1,7 +1,28 @@
-import { dangerousFileUploads, envFilesTracked, hardcodedSecrets, commandInjection, insecureCookies, missingRateLimiting, sqlInjection, ssrf, wildcardCors } from './security/index.js';
+import {
+  dangerousFileUploads,
+  envFilesTracked,
+  hardcodedSecrets,
+  commandInjection,
+  insecureCookies,
+  missingRateLimiting,
+  sqlInjection,
+  ssrf,
+  wildcardCors
+} from './security/index.js';
 import { exposedStackTraces, emptyCatchBlocks } from './reliability/error-handling.js';
-import { debugMode, envValidation, localhostConfiguration, productionScripts } from './configuration/index.js';
-import { databaseExposed, dockerRiskySettings, dockerRootUser, kubernetesRiskySettings, missingHealthChecks } from './infrastructure/index.js';
+import {
+  debugMode,
+  envValidation,
+  localhostConfiguration,
+  productionScripts
+} from './configuration/index.js';
+import {
+  databaseExposed,
+  dockerRiskySettings,
+  dockerRootUser,
+  kubernetesRiskySettings,
+  missingHealthChecks
+} from './infrastructure/index.js';
 import { missingLockfile } from './dependencies/index.js';
 import { placeholderImplementation } from './ai/index.js';
 import { sensitiveLogging } from './ai/sensitive-logging.js';

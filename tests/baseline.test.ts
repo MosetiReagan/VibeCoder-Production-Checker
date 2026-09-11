@@ -10,7 +10,10 @@ describe('baseline', () => {
     const result = await scanProject({ path: 'tests/fixtures/insecure-node-app', cache: false });
     expect(result.findings.length).toBeGreaterThan(0);
     const baseline = createBaseline(result);
-    const file = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'production-check-baseline-')), 'baseline.json');
+    const file = path.join(
+      fs.mkdtempSync(path.join(os.tmpdir(), 'production-check-baseline-')),
+      'baseline.json'
+    );
     fs.writeFileSync(file, JSON.stringify(baseline));
     const filtered = applyBaseline(result, file);
     expect(filtered.findings).toHaveLength(0);

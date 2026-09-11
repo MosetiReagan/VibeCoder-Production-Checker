@@ -6,10 +6,7 @@ import type { Confidence, Severity } from './shared.js';
 const severitySchema = z.enum(['critical', 'high', 'medium', 'low', 'info']);
 const confidenceSchema = z.enum(['high', 'medium', 'low']);
 
-const ignoreSchema = z.union([
-  z.array(z.string()),
-  z.record(z.string(), z.string())
-]);
+const ignoreSchema = z.union([z.array(z.string()), z.record(z.string(), z.string())]);
 
 export const configSchema = z.object({
   extends: z.literal('recommended').optional(),
@@ -47,7 +44,8 @@ export const defaultExcludes = [
 
 export function normalizeIgnores(ignore: UserConfig['ignore']): Record<string, string> {
   if (!ignore) return {};
-  if (Array.isArray(ignore)) return Object.fromEntries(ignore.map((id) => [id, 'Configured suppression']));
+  if (Array.isArray(ignore))
+    return Object.fromEntries(ignore.map((id) => [id, 'Configured suppression']));
   return { ...ignore };
 }
 
@@ -73,7 +71,9 @@ export function resolveConfig(user: Partial<UserConfig>): ResolvedConfig {
   const rules = user.rules ?? {};
   return {
     ignore: normalizeIgnores(user.ignore),
-    disabled: Object.entries(rules).filter(([, value]) => value === 'off').map(([key]) => key),
+    disabled: Object.entries(rules)
+      .filter(([, value]) => value === 'off')
+      .map(([key]) => key),
     severityOverrides: user.severity ?? {},
     confidenceOverrides: user.confidence ?? {},
     excludes: [...defaultExcludes, ...(user.exclude ?? [])],

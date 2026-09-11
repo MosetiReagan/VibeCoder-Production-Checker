@@ -18,9 +18,12 @@ export const commandInjection = createRule({
     return scanLines(context, dynamicCommandPatterns, (file, line, text, match) => {
       const variableName = match[1];
       if (variableName) {
-        const isExecuted = context.files.some((scannedFile) =>
-          scannedFile.relativePath === file &&
-          new RegExp(`\\b(?:exec|execSync|spawn|spawnSync|execFile|execFileSync)\\s*\\(\\s*${variableName}\\b`).test(scannedFile.content)
+        const isExecuted = context.files.some(
+          (scannedFile) =>
+            scannedFile.relativePath === file &&
+            new RegExp(
+              `\\b(?:exec|execSync|spawn|spawnSync|execFile|execFileSync)\\s*\\(\\s*${variableName}\\b`
+            ).test(scannedFile.content)
         );
         if (!isExecuted) return null;
       }
@@ -35,7 +38,8 @@ export const commandInjection = createRule({
         evidence: trimEvidence(text),
         description: 'A shell command is dynamically constructed before execution.',
         impact: 'Untrusted input can alter the command and execute arbitrary code on the host.',
-        recommendation: 'Use execFile with fixed command names and argument arrays. Validate every dynamic value against an allow-list.'
+        recommendation:
+          'Use execFile with fixed command names and argument arrays. Validate every dynamic value against an allow-list.'
       });
     });
   }

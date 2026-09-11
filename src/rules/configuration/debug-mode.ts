@@ -22,9 +22,12 @@ export const debugMode = createRule({
           file,
           line,
           evidence: trimEvidence(text),
-          description: 'A debug or development mode setting was found in a deployed application path.',
-          impact: 'Debug mode can expose verbose errors, sensitive logs, internal routes, or slower development middleware.',
-          recommendation: 'Default production deployments to NODE_ENV=production and derive debug behavior from an explicitly validated setting.'
+          description:
+            'A debug or development mode setting was found in a deployed application path.',
+          impact:
+            'Debug mode can expose verbose errors, sensitive logs, internal routes, or slower development middleware.',
+          recommendation:
+            'Default production deployments to NODE_ENV=production and derive debug behavior from an explicitly validated setting.'
         });
       }
     );

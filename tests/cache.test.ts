@@ -7,7 +7,8 @@ import { scanProject } from '../src/index.js';
 const directories: string[] = [];
 
 afterEach(() => {
-  for (const directory of directories.splice(0)) fs.rmSync(directory, { recursive: true, force: true });
+  for (const directory of directories.splice(0))
+    fs.rmSync(directory, { recursive: true, force: true });
 });
 
 describe('scan cache', () => {

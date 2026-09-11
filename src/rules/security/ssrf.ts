@@ -10,20 +10,25 @@ export const ssrf = createRule({
   async run(context) {
     return scanLines(
       context,
-      [/\b(?:fetch|axios(?:\.(?:get|post|request))?|got|request)\s*\(\s*(?:req(?:uest)?\.(?:query|body|params|url)|request\.(?:GET|POST))/i],
-      (file, line, text) => createFinding({
-        ruleId: this.id,
-        title: this.title,
-        severity: this.severity,
-        confidence: this.confidence,
-        category: this.category,
-        file,
-        line,
-        evidence: trimEvidence(text),
-        description: 'An outbound HTTP request appears to use a URL derived from request data.',
-        impact: 'An attacker may be able to reach internal services, cloud metadata endpoints, or private networks.',
-        recommendation: 'Validate the destination against an allow-list of schemes and hosts, resolve DNS before connecting, and block private IP ranges.'
-      })
+      [
+        /\b(?:fetch|axios(?:\.(?:get|post|request))?|got|request)\s*\(\s*(?:req(?:uest)?\.(?:query|body|params|url)|request\.(?:GET|POST))/i
+      ],
+      (file, line, text) =>
+        createFinding({
+          ruleId: this.id,
+          title: this.title,
+          severity: this.severity,
+          confidence: this.confidence,
+          category: this.category,
+          file,
+          line,
+          evidence: trimEvidence(text),
+          description: 'An outbound HTTP request appears to use a URL derived from request data.',
+          impact:
+            'An attacker may be able to reach internal services, cloud metadata endpoints, or private networks.',
+          recommendation:
+            'Validate the destination against an allow-list of schemes and hosts, resolve DNS before connecting, and block private IP ranges.'
+        })
     );
   }
 });
