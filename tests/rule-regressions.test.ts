@@ -100,7 +100,23 @@ describe('rule regression coverage', () => {
         ].join('\n')
       )
     ]);
-    expect(findings.map((finding) => finding.line)).toEqual([1, 4]);
+    expect(findings.map((finding) => finding.line)).toEqual([2, 4]);
+  });
+
+  it('uses the AST for safe and unsafe command calls', async () => {
+    const { commandInjection } = await import('../src/rules/security/command-injection.js');
+    const findings = await runRule(commandInjection, [
+      createSourceFile(
+        'src/shell-ast.ts',
+        [
+          "exec('npm run build');",
+          'const command = `wc -l ${file}`;',
+          'execFile(command, { cwd });',
+          "spawn('npm', ['test'], { shell: true });"
+        ].join('\n')
+      )
+    ]);
+    expect(findings.map((finding) => finding.line)).toEqual([3, 4]);
   });
 
   it('checks rate limiting beside each authentication route', async () => {
