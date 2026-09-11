@@ -12,17 +12,23 @@ export const dockerRootUser = createRule({
   async run(context) {
     const findings: Finding[] = [];
     for (const file of context.files.filter((item) => item.relativePath === 'Dockerfile')) {
-      const hasUser = file.lines.some((line) => /^\s*USER\s+\S+/.test(line));
-      if (!hasUser) findings.push(createFinding({
+      const userDirectives = file.lines
+        .map((line, index) => ({ line, index, match: line.match(/^\s*USER\s+(\S+)/) }))
+        .filter((directive) => directive.match);
+      const lastUser = userDirectives.at(-1);
+      const resolvesToRoot = lastUser?.match?.[1]?.toLowerCase().match(/(?:^|[^a-z0-9])(?:root|0(?::0)?)(?:$|[^a-z0-9])/);
+      if (!lastUser || resolvesToRoot) findings.push(createFinding({
         ruleId: this.id,
         title: this.title,
         severity: this.severity,
         confidence: this.confidence,
         category: this.category,
         file: file.relativePath,
-        line: file.lines.length,
-        evidence: 'No USER directive found',
-        description: 'The Dockerfile does not select a non-root runtime user.',
+        line: lastUser ? lastUser.index + 1 : file.lines.length,
+        evidence: lastUser ? lastUser.line.trim() : 'No USER directive found',
+        description: lastUser
+          ? 'The final USER directive selects a root user.'
+          : 'The Dockerfile does not select a non-root runtime user.',
         impact: 'A compromised application process has unnecessary root privileges inside the container.',
         recommendation: 'Create an application user, set ownership only where needed, and end the runtime stage with USER appuser.'
       }));

@@ -130,4 +130,18 @@ describe('rule regression coverage', () => {
     files.push(createSourceFile('src/env.ts', 'const env = schema.parse(process.env);'));
     expect(await runRule(envValidation, files)).toHaveLength(0);
   });
+
+  it('evaluates the final Docker USER directive', async () => {
+    const { dockerRootUser } = await import('../src/rules/infrastructure/docker.js');
+    const rootFindings = await runRule(dockerRootUser, [
+      createSourceFile('Dockerfile', 'USER node\nUSER root\n')
+    ]);
+    expect(rootFindings).toHaveLength(1);
+    expect(rootFindings[0].line).toBe(2);
+
+    const nonRootFindings = await runRule(dockerRootUser, [
+      createSourceFile('Dockerfile', 'USER root\nUSER node\n')
+    ]);
+    expect(nonRootFindings).toHaveLength(0);
+  });
 });
