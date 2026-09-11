@@ -171,6 +171,12 @@ SARIF uses the SARIF 2.1.0 schema and is suitable for GitHub code scanning. JSON
 
 ## Configuration
 
+Initialize a recommended file:
+
+```bash
+production-check init
+```
+
 Create `.production-check.json`:
 
 ```json

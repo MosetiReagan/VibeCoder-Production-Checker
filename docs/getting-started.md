@@ -35,4 +35,10 @@ node dist/cli.js score
 
 The scanner requires a readable directory and Node.js 20 or newer.
 
+Create a recommended configuration with:
+
+```bash
+production-check init
+```
+
 The HTML report includes severity filters, collapsible findings, and stable deep links such as `report.html#finding-1`. It is fully self-contained and works offline.

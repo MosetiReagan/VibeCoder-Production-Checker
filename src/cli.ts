@@ -6,6 +6,7 @@ import pc from 'picocolors';
 import { scanProject, scanWorkspaces } from './core/scanner.js';
 import { explainScores, findingsMeetThreshold } from './core/scoring.js';
 import { applyBaseline, createBaseline } from './core/baseline.js';
+import { initializeConfig } from './core/init.js';
 import { conciseReport, htmlReport, jsonReport, markdownReport, sarifReport, terminalReport } from './reporters/index.js';
 import { getRule } from './rules/index.js';
 import type { Severity } from './shared.js';
@@ -78,6 +79,15 @@ program
       process.stderr.write(`${pc.red('Error:')} ${error instanceof Error ? error.message : String(error)}\n`);
       process.exitCode = 1;
     }
+  });
+
+program
+  .command('init')
+  .description('Create a recommended configuration file')
+  .argument('[path]', 'project directory', '.')
+  .action(async (target: string) => {
+    const file = await initializeConfig(path.resolve(target));
+    process.stdout.write(`Created ${file}\n`);
   });
 
 program
