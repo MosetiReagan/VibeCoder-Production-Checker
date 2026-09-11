@@ -210,4 +210,13 @@ describe('rule regression coverage', () => {
     expect(findings[0].file).toBe('(no Dockerfile)');
     expect(findings[0].line).toBe(0);
   });
+
+  it('detects empty catch blocks across multiple lines', async () => {
+    const { emptyCatchBlocks } = await import('../src/rules/reliability/error-handling.js');
+    const findings = await runRule(emptyCatchBlocks, [
+      createSourceFile('src/handler.ts', 'try {\n  await save();\n} catch (error) {\n}\n')
+    ]);
+    expect(findings).toHaveLength(1);
+    expect(findings[0].line).toBe(3);
+  });
 });

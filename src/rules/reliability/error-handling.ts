@@ -1,4 +1,4 @@
-import { createFinding, createRule, scanLines, trimEvidence } from '../helpers.js';
+import { createFinding, createRule, isDocumentation, scanLines, trimEvidence } from '../helpers.js';
 
 export const exposedStackTraces = createRule({
   id: 'REL-001',
@@ -34,20 +34,26 @@ export const emptyCatchBlocks = createRule({
   severity: 'low',
   confidence: 'medium',
   async run(context) {
-    return scanLines(context, [/catch\s*(?:\([^)]*\))?\s*\{\s*\}/], (file, line, text) =>
-      createFinding({
+    const findings = [];
+    for (const file of context.files) {
+      if (isDocumentation(file.relativePath)) continue;
+      for (const match of file.content.matchAll(/catch\s*(?:\([^)]*\))?\s*\{\s*\}/g)) {
+        const line = file.content.slice(0, match.index).split(/\r?\n/).length;
+        findings.push(createFinding({
         ruleId: this.id,
         title: this.title,
         severity: this.severity,
         confidence: this.confidence,
         category: this.category,
-        file,
+        file: file.relativePath,
         line,
-        evidence: trimEvidence(text),
+        evidence: trimEvidence(match[0]),
         description: 'A catch block has no visible error handling.',
         impact: 'Failures can be hidden, making incidents difficult to detect and diagnose.',
         recommendation: 'Log the error with useful context, rethrow intentional failures, or document why ignoring the error is safe.'
-      })
-    );
+        }));
+      }
+    }
+    return findings;
   }
 });
