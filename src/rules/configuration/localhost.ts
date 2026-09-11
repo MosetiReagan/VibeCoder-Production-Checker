@@ -12,7 +12,10 @@ export const localhostConfiguration = createRule({
       const productionConfig = /\.(?:production|prod)(?:\.[^.]+)?$/.test(file) ||
         file === 'production.env' ||
         file === 'Dockerfile' ||
-        /^(?:docker-compose|compose)\.ya?ml$/.test(file);
+        /^(?:docker-compose|compose)\.ya?ml$/.test(file) ||
+        /^(?:next|nuxt|vite|remix|astro|svelte)\.config\.(?:js|ts|mjs)$/.test(file) ||
+        /^kustomization\.ya?ml$/.test(file) ||
+        /^Chart\.ya?ml$/.test(file);
       if (!productionConfig) return null;
       if (file === 'Dockerfile' && /^\s*HEALTHCHECK\s/.test(text)) return null;
       return createFinding({

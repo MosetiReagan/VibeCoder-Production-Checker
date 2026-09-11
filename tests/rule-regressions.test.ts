@@ -166,4 +166,12 @@ describe('rule regression coverage', () => {
     expect(findings).toHaveLength(1);
     expect(findings[0].evidence).toContain('long-form');
   });
+
+  it('checks framework production configuration for localhost', async () => {
+    const { localhostConfiguration } = await import('../src/rules/configuration/localhost.js');
+    const findings = await runRule(localhostConfiguration, [
+      createSourceFile('next.config.js', "module.exports = { assetPrefix: 'http://localhost:3000' };")
+    ]);
+    expect(findings).toHaveLength(1);
+  });
 });
