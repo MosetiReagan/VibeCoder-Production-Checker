@@ -33,7 +33,8 @@ program
   .option('--baseline <file>', 'suppress findings recorded in a baseline file')
   .option('--workspace <name>', 'scan one workspace inside the target repository')
   .option('--workspaces', 'scan every detected workspace separately')
-  .action(async (target: string, options: { format: string; output?: string; html?: string; ci?: boolean; failOn?: Severity; baseline?: string; workspace?: string; workspaces?: boolean }) => {
+  .option('-q, --quiet', 'print findings only')
+  .action(async (target: string, options: { format: string; output?: string; html?: string; ci?: boolean; failOn?: Severity; baseline?: string; workspace?: string; workspaces?: boolean; quiet?: boolean }) => {
     try {
       if (options.workspaces) {
         const results = await scanWorkspaces({ path: target });
@@ -61,7 +62,11 @@ program
       if (format !== 'terminal' && !options.output) {
         process.stdout.write(reportFor(format, reportedResult, options.ci === true));
       } else if (format === 'terminal' && !options.output) {
-        process.stdout.write(options.ci ? conciseReport(reportedResult) + '\n' : `${terminalReport(reportedResult)}\n`);
+        process.stdout.write(
+          options.ci || options.quiet
+            ? `${conciseReport(reportedResult)}\n`
+            : `${terminalReport(reportedResult)}\n`
+        );
       }
       const failOn = options.failOn ?? result.config.failOn;
       if (options.ci && failOn && findingsMeetThreshold(reportedResult.findings, failOn)) {

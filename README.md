@@ -80,6 +80,7 @@ production-check . --workspaces
 production-check --format json --output report.json
 production-check --format sarif --output report.sarif
 production-check --html report.html
+production-check --quiet
 production-check explain SEC-001
 production-check score
 ```
