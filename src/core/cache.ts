@@ -18,7 +18,8 @@ export function ruleEngineVersion(rules: Rule[]): string {
     description: rule.description,
     category: rule.category,
     severity: rule.severity,
-    confidence: rule.confidence
+    confidence: rule.confidence,
+    implementation: rule.run.toString()
   }));
   return crypto.createHash('sha256').update(JSON.stringify(metadata)).digest('hex');
 }
