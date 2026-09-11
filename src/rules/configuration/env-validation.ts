@@ -11,7 +11,7 @@ export const envValidation = createRule({
   confidence: 'low',
   async run(context) {
     const hasValidation = context.files.some((file) =>
-      /(?:zod|envalid|dotenv-safe|schema\s*:|parseEnv|safeParse)/i.test(file.content)
+      /(?:safeParse|parse|cleanEnv|parseEnv)\s*\(\s*process\.env/.test(file.content)
     );
     if (hasValidation) return [];
     const findings = [];

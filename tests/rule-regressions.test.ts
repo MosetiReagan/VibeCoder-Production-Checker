@@ -118,4 +118,16 @@ describe('rule regression coverage', () => {
     expect(findings).toHaveLength(1);
     expect(findings[0].confidence).toBe('medium');
   });
+
+  it('requires environment validation to parse process.env', async () => {
+    const { envValidation } = await import('../src/rules/configuration/env-validation.js');
+    const files = [
+      createSourceFile('package.json', '{"dependencies":{"zod":"^3.23.8"}}'),
+      createSourceFile('src/server.ts', 'console.log(process.env.DATABASE_URL);')
+    ];
+    expect(await runRule(envValidation, files)).toHaveLength(1);
+
+    files.push(createSourceFile('src/env.ts', 'const env = schema.parse(process.env);'));
+    expect(await runRule(envValidation, files)).toHaveLength(0);
+  });
 });
