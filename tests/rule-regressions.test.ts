@@ -144,4 +144,26 @@ describe('rule regression coverage', () => {
     ]);
     expect(nonRootFindings).toHaveLength(0);
   });
+
+  it('handles Compose port forms and loopback bindings', async () => {
+    const { databaseExposed } = await import('../src/rules/infrastructure/docker.js');
+    const findings = await runRule(databaseExposed, [
+      createSourceFile(
+        'docker-compose.yml',
+        [
+          'services:',
+          '  loopback:',
+          '    ports: ["127.0.0.1:5432:5432"]',
+          '  random-host:',
+          '    ports: ["5432"]',
+          '  long-form:',
+          '    ports:',
+          '      - target: 5432',
+          '        published: 5432'
+        ].join('\n')
+      )
+    ]);
+    expect(findings).toHaveLength(1);
+    expect(findings[0].evidence).toContain('long-form');
+  });
 });

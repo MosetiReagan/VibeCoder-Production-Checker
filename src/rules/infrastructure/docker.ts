@@ -109,7 +109,7 @@ export const databaseExposed = createRule({
   severity: 'high',
   confidence: 'high',
   async run(context) {
-    const findings = [];
+    const findings: Finding[] = [];
     const databasePorts = new Set([5432, 3306, 6379, 27017]);
     for (const file of context.files.filter((item) => /^docker-compose\.ya?ml$|^compose\.ya?ml$/.test(item.relativePath))) {
       let document: unknown;
@@ -118,19 +118,21 @@ export const databaseExposed = createRule({
       } catch {
         continue;
       }
-      const services = (document as { services?: Record<string, { ports?: string[] }> })?.services ?? {};
+      const services = (document as {
+        services?: Record<string, { ports?: Array<string | number | { published?: string | number }> }>;
+      })?.services ?? {};
       for (const [serviceName, service] of Object.entries(services)) {
         for (const port of service.ports ?? []) {
-          const [host] = String(port).split(':');
-          const hostPort = Number(host);
-          if (databasePorts.has(hostPort)) findings.push(createFinding({
+          if (isLoopbackBinding(port)) continue;
+          const hostPort = extractHostPort(port);
+          if (hostPort !== null && databasePorts.has(hostPort)) findings.push(createFinding({
             ruleId: this.id,
             title: this.title,
             severity: this.severity,
             confidence: this.confidence,
             category: this.category,
             file: file.relativePath,
-            line: findPortLine(file.lines, String(port)),
+            line: findPortLine(file.lines, port),
             evidence: `${serviceName}: ${port}`,
             description: `Service ${serviceName} publishes database/cache port ${port}.`,
             impact: 'The database can be reachable from host interfaces and potentially the public network.',
@@ -143,7 +145,31 @@ export const databaseExposed = createRule({
   }
 });
 
-function findPortLine(lines: string[], port: string): number {
-  const index = lines.findIndex((line) => line.includes(port));
+type ComposePort = string | number | { published?: string | number };
+
+function extractHostPort(port: ComposePort): number | null {
+  if (typeof port === 'object' && port !== null) {
+    const published = port.published;
+    if (typeof published === 'number') return published;
+    if (typeof published === 'string') {
+      const parts = published.split(':');
+      return parts.length === 1 ? Number(published) : Number(parts.at(-1));
+    }
+    return null;
+  }
+  const parts = String(port).split(':');
+  if (parts.length === 1) return null;
+  const hostPort = Number(parts.at(-2));
+  return Number.isFinite(hostPort) ? hostPort : null;
+}
+
+function isLoopbackBinding(port: ComposePort): boolean {
+  const value = typeof port === 'object' && port !== null ? String(port.published ?? '') : String(port);
+  return /^(?:localhost|127\.\d{1,3}(?:\.\d{1,3}){2}):/i.test(value);
+}
+
+function findPortLine(lines: string[], port: ComposePort): number {
+  const target = typeof port === 'object' && port !== null ? String(port.published ?? '') : String(port);
+  const index = lines.findIndex((line) => line.includes(target));
   return index === -1 ? 1 : index + 1;
 }
