@@ -18,7 +18,10 @@ export const placeholderImplementation = createRule({
   async run(context) {
     return scanLines(context, placeholderPatterns, (file, line, text) => {
       if (file.includes('.env.example') || file.startsWith('.github/')) return null;
-      const operational = /(payment|charge|login|auth|save|create|delete|update|database|api)/i.test(file + '\n' + text);
+      if (/health|ready|livez|readyz|webhook|callback/i.test(file)) return null;
+      const sourceFile = context.files.find((item) => item.relativePath === file);
+      const nearby = sourceFile?.lines.slice(Math.max(0, line - 16), line + 5).join('\n') ?? text;
+      const operational = /(payment|charge|login|auth|save|create|delete|update|database)/i.test(nearby);
       return createFinding({
         ruleId: this.id,
         title: this.title,

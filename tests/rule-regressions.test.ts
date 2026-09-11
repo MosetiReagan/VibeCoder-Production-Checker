@@ -101,4 +101,21 @@ describe('rule regression coverage', () => {
     expect(findings[0].evidence).not.toContain(secret);
     expect(findings[0].evidence.match(/sk-tes\*+/g)).toHaveLength(2);
   });
+
+  it('keeps health acknowledgements out of placeholder findings', async () => {
+    const { placeholderImplementation } = await import('../src/rules/ai/placeholders.js');
+    const findings = await runRule(placeholderImplementation, [
+      createSourceFile('src/api/healthcheck.ts', `export function health() {\n  return { success: true };\n}`)
+    ]);
+    expect(findings).toHaveLength(0);
+  });
+
+  it('detects placeholder payment handlers using nearby context', async () => {
+    const { placeholderImplementation } = await import('../src/rules/ai/placeholders.js');
+    const findings = await runRule(placeholderImplementation, [
+      createSourceFile('src/routes/status.ts', `export async function processPayment() {\n  return { success: true };\n}`)
+    ]);
+    expect(findings).toHaveLength(1);
+    expect(findings[0].confidence).toBe('medium');
+  });
 });
