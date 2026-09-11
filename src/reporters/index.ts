@@ -117,7 +117,7 @@ export function sarifReport(result: ScanResult): string {
         message: { text: `${finding.title}: ${finding.description} Fix: ${finding.recommendation}` },
         locations: [{ physicalLocation: {
           artifactLocation: { uri: finding.file },
-          region: { startLine: finding.line }
+          region: { startLine: Math.max(1, finding.line) }
         } }],
         properties: { confidence: finding.confidence, evidence: finding.evidence }
       }))

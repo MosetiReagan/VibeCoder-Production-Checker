@@ -57,7 +57,7 @@ export async function scanProject(input: { path: string; cache?: boolean; worksp
   );
   const findings = ruleFindings
     .flat()
-    .filter((finding) => finding.file && finding.line > 0)
+    .filter((finding) => finding.file && finding.line >= 0)
     .sort((a, b) => a.file.localeCompare(b.file) || a.line - b.line);
   const applied = applyRulePolicy(findings, config);
   const result = {

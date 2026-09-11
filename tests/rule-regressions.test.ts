@@ -202,4 +202,12 @@ describe('rule regression coverage', () => {
     expect(notIgnored[0].file).toBe('packages/api/.env.local');
     fs.rmSync(root, { recursive: true, force: true });
   });
+
+  it('reports missing health checks without inventing a source location', async () => {
+    const { missingHealthChecks } = await import('../src/rules/infrastructure/health.js');
+    const findings = await runRule(missingHealthChecks, [createSourceFile('src/server.ts', 'app.listen(3000);')]);
+    expect(findings).toHaveLength(1);
+    expect(findings[0].file).toBe('(no Dockerfile)');
+    expect(findings[0].line).toBe(0);
+  });
 });
