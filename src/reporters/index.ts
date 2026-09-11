@@ -1,0 +1,153 @@
+import pc from 'picocolors';
+import type { Severity } from '../shared.js';
+import { categoryLabels, scoreLevel } from '../shared.js';
+import type { ScanResult } from '../core/types.js';
+
+function colorSeverity(severity: Severity, text: string): string {
+  if (severity === 'critical') return pc.bold(pc.bgRed(text));
+  if (severity === 'high') return pc.red(text);
+  if (severity === 'medium') return pc.yellow(text);
+  if (severity === 'low') return pc.blue(text);
+  return pc.gray(text);
+}
+
+export function terminalReport(result: ScanResult): string {
+  const lines = [
+    pc.bold('Production Checker'),
+    '─'.repeat(40),
+    '',
+    `Project: ${result.project.root}`,
+    `Detected: ${[...result.project.languages, ...result.project.frameworks].join(', ') || 'Unknown'}`,
+    `Files analyzed: ${result.filesAnalyzed}`,
+    `Dependencies detected: ${result.dependenciesAnalyzed}`,
+    '',
+    pc.bold(`Production Score: ${result.score.overall} / 100 — ${scoreLevel(result.score.overall)}`),
+    ''
+  ];
+  for (const [category, score] of Object.entries(result.score.categories)) {
+    lines.push(`${(categoryLabels[category as keyof typeof categoryLabels] ?? category).padEnd(22)} ${score}`);
+  }
+  lines.push('', pc.bold(`Findings (${result.findings.length})`), '');
+  if (result.findings.length === 0) lines.push(pc.green('✓ No findings'));
+  for (const finding of result.findings) {
+    lines.push(
+      `${colorSeverity(finding.severity, finding.severity.toUpperCase().padEnd(8))} ${finding.title}`,
+      `  ${finding.ruleId} · ${finding.file}:${finding.line} · confidence ${finding.confidence}`,
+      `  ${pc.gray(finding.evidence)}`,
+      `  Fix: ${finding.recommendation}`,
+      ''
+    );
+  }
+  lines.push(`Scan complete in ${(result.durationMs / 1000).toFixed(2)}s`);
+  return lines.join('\n');
+}
+
+export function jsonReport(result: ScanResult): string {
+  return `${JSON.stringify(result, null, 2)}\n`;
+}
+
+export function markdownReport(result: ScanResult): string {
+  const lines = [
+    '# Production Readiness Report',
+    '',
+    `**Overall score:** ${result.score.overall}/100 — ${scoreLevel(result.score.overall)}`,
+    `**Project:** ${result.project.root}`,
+    `**Detected:** ${[...result.project.languages, ...result.project.frameworks].join(', ') || 'Unknown'}`,
+    '',
+    '## Category Scores',
+    '',
+    '| Category | Score |',
+    '|---|---:|',
+    ...Object.entries(result.score.categories).map(([category, score]) => `| ${categoryLabels[category as keyof typeof categoryLabels]} | ${score} |`),
+    '',
+    `## Findings (${result.findings.length})`,
+    ''
+  ];
+  if (result.findings.length === 0) lines.push('No findings.');
+  for (const finding of result.findings) {
+    lines.push(
+      `### ${finding.severity.toUpperCase()} — ${finding.title}`,
+      '',
+      `- **Rule:** \`${finding.ruleId}\``,
+      `- **Location:** \`${finding.file}:${finding.line}\``,
+      `- **Confidence:** ${finding.confidence}`,
+      `- **Evidence:** \`${finding.evidence.replace(/\|/g, '\\|')}\``,
+      `- **Impact:** ${finding.impact}`,
+      `- **Recommendation:** ${finding.recommendation}`,
+      ''
+    );
+  }
+  lines.push(`Scan completed in ${(result.durationMs / 1000).toFixed(2)} seconds.`);
+  return `${lines.join('\n')}\n`;
+}
+
+export function sarifReport(result: ScanResult): string {
+  const rules = [...new Map(result.findings.map((finding) => [finding.ruleId, finding])).values()];
+  return `${JSON.stringify({
+    $schema: 'https://json.schemastore.org/sarif-2.1.0.json',
+    version: '2.1.0',
+    runs: [{
+      tool: { driver: { name: 'Production Checker', informationUri: 'https://github.com/vibecoder/production-checker', rules: rules.map((finding) => ({
+        id: finding.ruleId,
+        name: finding.title,
+        shortDescription: { text: finding.description },
+        properties: { 'security-severity': severityToSarif(finding.severity).toFixed(1) }
+      })) } },
+      results: result.findings.map((finding) => ({
+        ruleId: finding.ruleId,
+        level: severityToSarifLevel(finding.severity),
+        message: { text: `${finding.title}: ${finding.description} Fix: ${finding.recommendation}` },
+        locations: [{ physicalLocation: {
+          artifactLocation: { uri: finding.file },
+          region: { startLine: finding.line }
+        } }],
+        properties: { confidence: finding.confidence, evidence: finding.evidence }
+      }))
+    }]
+  }, null, 2)}\n`;
+}
+
+function severityToSarif(severity: Severity): number {
+  return { critical: 9.5, high: 8, medium: 5.5, low: 3, info: 1 }[severity];
+}
+
+function severityToSarifLevel(severity: Severity): 'error' | 'warning' | 'note' {
+  if (severity === 'critical' || severity === 'high') return 'error';
+  if (severity === 'medium') return 'warning';
+  return 'note';
+}
+
+export function htmlReport(result: ScanResult): string {
+  const findings = result.findings.map((finding) => `
+    <article class="finding ${finding.severity}">
+      <header><span>${finding.severity.toUpperCase()}</span><strong>${escapeHtml(finding.title)}</strong></header>
+      <p><code>${escapeHtml(finding.file)}:${finding.line}</code> · confidence ${finding.confidence}</p>
+      <pre>${escapeHtml(finding.evidence)}</pre>
+      <p>${escapeHtml(finding.impact)}</p>
+      <p><strong>Fix:</strong> ${escapeHtml(finding.recommendation)}</p>
+    </article>`).join('');
+  const categories = Object.entries(result.score.categories).map(([category, score]) =>
+    `<div class="category"><span>${escapeHtml(categoryLabels[category as keyof typeof categoryLabels] ?? category)}</span><strong>${score}</strong></div>`
+  ).join('');
+  return `<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Production Checker Report</title>
+<style>
+:root{color-scheme:light dark;--bg:#0b1020;--card:#151c31;--text:#e9eefb;--muted:#a9b4cc;--high:#ef4444;--medium:#f59e0b;--low:#38bdf8}*{box-sizing:border-box}body{margin:0;font:15px/1.55 system-ui,sans-serif;background:var(--bg);color:var(--text)}main{max-width:960px;margin:auto;padding:32px}h1{margin:0 0 8px}.score{font-size:48px;font-weight:800}.card{background:var(--card);border:1px solid #28334c;border-radius:12px;padding:24px;margin:16px 0}.categories{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}.category{background:#101827;border-radius:8px;padding:12px}.category span{display:block;color:var(--muted);font-size:13px}.finding{border-left:4px solid var(--medium);background:var(--card);border-radius:8px;padding:16px;margin:12px 0}.finding.high,.finding.critical{border-color:var(--high)}.finding.low{border-color:var(--low)}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#0b1020;padding:10px;border-radius:6px}code{font-family:ui-monospace,monospace}.muted{color:var(--muted)}
+</style></head><body><main>
+<h1>Production Checker</h1><p class="muted">${escapeHtml(result.project.root)}</p>
+<section class="card"><div class="score">${result.score.overall}/100</div><p>${escapeHtml(scoreLevel(result.score.overall))}</p><div class="categories">${categories}</div></section>
+<section><h2>Findings (${result.findings.length})</h2>${findings || '<p>No findings.</p>'}</section>
+<p class="muted">Files: ${result.filesAnalyzed} · Dependencies: ${result.dependenciesAnalyzed} · Scan time: ${(result.durationMs / 1000).toFixed(2)}s</p>
+</main></body></html>\n`;
+}
+
+function escapeHtml(value: string): string {
+  return value.replace(/[&<>'"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[char] ?? char);
+}
+
+export function conciseReport(result: ScanResult): string {
+  return result.findings.map((finding) =>
+    `${finding.severity.toUpperCase()} ${finding.ruleId} ${finding.file}:${finding.line} ${finding.title}`
+  ).join('\n') || 'No findings';
+}

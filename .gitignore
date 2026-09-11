@@ -1,0 +1,12 @@
+node_modules/
+dist/
+coverage/
+.cache/
+*.log
+.env
+.env.*
+!.env.example
+report.json
+report.md
+report.sarif
+report.html
