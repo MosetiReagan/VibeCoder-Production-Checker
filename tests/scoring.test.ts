@@ -13,4 +13,10 @@ describe('scoring', () => {
     expect(findingsMeetThreshold([medium], 'high')).toBe(false);
     expect(findingsMeetThreshold([medium], 'medium')).toBe(true);
   });
+
+  it('makes disabled rules visible in scoring', () => {
+    const breakdown = calculateScore([], ['SEC-001']);
+    expect(breakdown.categories.security).toBe(99);
+    expect(breakdown.overall).toBe(99);
+  });
 });

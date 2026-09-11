@@ -28,6 +28,14 @@ export function terminalReport(result: ScanResult): string {
   for (const [category, score] of Object.entries(result.score.categories)) {
     lines.push(`${(categoryLabels[category as keyof typeof categoryLabels] ?? category).padEnd(22)} ${score}`);
   }
+  if (result.config.disabled.length > 0) {
+    lines.push(
+      '',
+      pc.yellow(
+        `Note: ${result.config.disabled.length} rule(s) disabled (${result.config.disabled.join(', ')}). Disabled checks reduce score transparency.`
+      )
+    );
+  }
   lines.push('', pc.bold(`Findings (${result.findings.length})`), '');
   if (result.findings.length === 0) lines.push(pc.green('✓ No findings'));
   for (const finding of result.findings) {

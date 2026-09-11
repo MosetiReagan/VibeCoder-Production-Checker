@@ -1,5 +1,6 @@
 import type { Category, Finding, Severity } from '../shared.js';
 import { categoryLabels, severityRank } from '../shared.js';
+import { getRule } from '../rules/index.js';
 
 export interface ScoreBreakdown {
   overall: number;
@@ -15,16 +16,23 @@ const weights: Record<Severity, number> = {
   info: 0
 };
 
-export function calculateScore(findings: Finding[]): ScoreBreakdown {
+export function calculateScore(findings: Finding[], disabledRules: string[] = []): ScoreBreakdown {
   const categoryFindings: Partial<Record<Category, Finding[]>> = {};
   for (const finding of findings) {
     const scoringCategory = finding.category === 'privacy' ? 'ai-generated' : finding.category;
     categoryFindings[scoringCategory] = [...(categoryFindings[scoringCategory] ?? []), finding];
   }
-  const categories: Partial<Record<Category, number>> = {};
+  const penalties: Partial<Record<Category, number>> = {};
   for (const [category, items] of Object.entries(categoryFindings) as Array<[Category, Finding[]]>) {
-    const penalty = Math.min(75, items.reduce((sum, finding) => sum + weights[finding.severity], 0));
-    categories[category] = Math.max(0, 100 - penalty);
+    penalties[category] = items.reduce((sum, finding) => sum + weights[finding.severity], 0);
+  }
+  for (const ruleId of disabledRules) {
+    const category = getRule(ruleId)?.category ?? 'configuration';
+    penalties[category] = (penalties[category] ?? 0) + 1;
+  }
+  const categories: Partial<Record<Category, number>> = {};
+  for (const [category, penalty] of Object.entries(penalties) as Array<[Category, number]>) {
+    categories[category] = Math.max(25, 100 - Math.min(75, penalty));
   }
   const primaryCategories: Category[] = [
     'security',

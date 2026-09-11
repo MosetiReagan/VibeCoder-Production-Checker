@@ -16,6 +16,8 @@ Each category starts at 100. Findings subtract:
 
 A category cannot fall below 0. Penalties are capped at 75 per category, ensuring multiple low-severity findings cannot make a category worse than one critical finding and that a severe issue still leaves room for measurable improvement.
 
+Each disabled rule subtracts one point from its category and is disclosed in terminal and JSON reports. Disabling checks therefore cannot silently improve a score.
+
 ## Overall score
 
 The overall score is the mean of applicable scores in Security, Reliability, Configuration, Infrastructure, Dependencies, Performance, and Production Hygiene. Categories with no applicable findings count as 100.

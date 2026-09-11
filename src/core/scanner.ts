@@ -58,7 +58,7 @@ export async function scanProject(input: { path: string; cache?: boolean }): Pro
     filesAnalyzed: files.length,
     dependenciesAnalyzed: countDependencies(project.manifest),
     findings: applied,
-    score: calculateScore(applied),
+    score: calculateScore(applied, config.disabled),
     durationMs: Date.now() - started,
     config,
     cached: false

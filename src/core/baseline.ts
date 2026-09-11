@@ -47,5 +47,5 @@ export function applyBaseline(result: ScanResult, baselinePath: string): ScanRes
   }
   const signatures = new Set(baseline.findings.map((entry) => entry.evidenceHash));
   const findings = result.findings.filter((finding) => !signatures.has(findingSignature(finding)));
-  return { ...result, findings, score: calculateScore(findings) };
+  return { ...result, findings, score: calculateScore(findings, result.config.disabled) };
 }
