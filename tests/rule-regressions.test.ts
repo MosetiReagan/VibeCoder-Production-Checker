@@ -86,6 +86,19 @@ describe('rule regression coverage', () => {
     expect(findings).toHaveLength(0);
   });
 
+  it('uses the AST to follow request-derived URL variables', async () => {
+    const { ssrf } = await import('../src/rules/security/ssrf.js');
+    const findings = await runRule(ssrf, [
+      createSourceFile(
+        'src/proxy-ast.ts',
+        'const target = req.query.url;\nconst response = await fetch(target);'
+      )
+    ]);
+    expect(findings).toHaveLength(1);
+    expect(findings[0].line).toBe(2);
+    expect(findings[0].evidence).toContain('fetch(target)');
+  });
+
   it('detects shell commands built separately and shell-mode spawns', async () => {
     const { commandInjection } = await import('../src/rules/security/command-injection.js');
     const findings = await runRule(commandInjection, [
