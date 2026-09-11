@@ -12,6 +12,6 @@ export default tseslint.config(
     }
   },
   {
-    ignores: ['dist/**', 'coverage/**', 'tests/fixtures/**', 'examples/**']
+    ignores: ['dist/**', 'coverage/**', 'tests/fixtures/**', 'examples/**', 'action/index.js']
   }
 );
