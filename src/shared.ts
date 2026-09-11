@@ -44,6 +44,7 @@ export interface SourceFile {
   lines: string[];
   extension: string;
   size: number;
+  mtimeMs: number;
 }
 
 export interface ProjectInfo {

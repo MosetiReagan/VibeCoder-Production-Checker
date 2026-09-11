@@ -18,7 +18,8 @@ export const configSchema = z.object({
   severity: z.record(z.string(), severitySchema).optional(),
   confidence: z.record(z.string(), confidenceSchema).optional(),
   exclude: z.array(z.string()).default([]),
-  failOn: severitySchema.optional()
+  failOn: severitySchema.optional(),
+  cache: z.boolean().default(true)
 });
 
 export type UserConfig = z.infer<typeof configSchema>;
@@ -30,6 +31,7 @@ export interface ResolvedConfig {
   confidenceOverrides: Record<string, Confidence>;
   excludes: string[];
   failOn?: Severity;
+  cache: boolean;
 }
 
 export const defaultExcludes = [
@@ -72,6 +74,7 @@ export function resolveConfig(user: Partial<UserConfig>): ResolvedConfig {
     severityOverrides: user.severity ?? {},
     confidenceOverrides: user.confidence ?? {},
     excludes: [...defaultExcludes, ...(user.exclude ?? [])],
-    failOn: user.failOn
+    failOn: user.failOn,
+    cache: user.cache ?? true
   };
 }

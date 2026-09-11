@@ -9,7 +9,8 @@ export function createSourceFile(relativePath: string, content: string): SourceF
     content,
     lines: content.split(/\r?\n/),
     extension: relativePath.slice(relativePath.lastIndexOf('.')),
-    size: content.length
+    size: content.length,
+    mtimeMs: 1
   };
 }
 

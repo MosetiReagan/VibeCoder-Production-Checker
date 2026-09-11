@@ -10,6 +10,7 @@ export interface ScanResult {
   score: ScoreBreakdown;
   durationMs: number;
   config: ResolvedConfig;
+  cached?: boolean;
 }
 
 export type { ProjectInfo, Finding, ScanContext, SourceFile, ScoreBreakdown };

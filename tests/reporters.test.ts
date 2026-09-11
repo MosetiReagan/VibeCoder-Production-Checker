@@ -4,7 +4,7 @@ import { htmlReport, jsonReport, markdownReport, sarifReport } from '../src/repo
 
 describe('reporters', () => {
   it('produces valid machine-readable reports', async () => {
-    const result = await scanProject({ path: 'tests/fixtures/insecure-node-app' });
+    const result = await scanProject({ path: 'tests/fixtures/insecure-node-app', cache: false });
     expect(JSON.parse(jsonReport(result))).toBeTypeOf('object');
     expect(markdownReport(result)).toContain('# Production Readiness Report');
     const sarif = JSON.parse(sarifReport(result));

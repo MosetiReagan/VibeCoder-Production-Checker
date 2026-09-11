@@ -31,7 +31,8 @@ Create `.production-check.json` in the project root.
 - `confidence`: confidence override
 - `exclude`: additional directories or exact file paths
 - `failOn`: default CI threshold
+ - `cache`: persist scan results between unchanged runs (default: `true`)
 
-The configuration is validated with Zod. Invalid files fail the scan.
+Set `cache` to `false` for one-off audits or when you want every run to execute every rule. Cached scans are keyed by project files, modification times, configuration, and rule metadata.
 
 Default exclusions are `node_modules`, `.git`, `dist`, `build`, `coverage`, `.cache`, `.next`, and `vendor`.
