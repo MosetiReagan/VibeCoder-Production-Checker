@@ -62,4 +62,21 @@ describe('rule regression coverage', () => {
     ]);
     expect(findings).toHaveLength(0);
   });
+
+  it('detects shell commands built separately and shell-mode spawns', async () => {
+    const { commandInjection } = await import('../src/rules/security/command-injection.js');
+    const findings = await runRule(commandInjection, [
+      createSourceFile(
+        'src/shell.ts',
+        [
+          'const command = `wc -l ${file}`;',
+          'exec(command, { cwd });',
+          "spawnSync('sh', ['-c', command]);",
+          "spawn('npm', ['test'], { shell: true });",
+          "execFile('wc', ['-l', file]);"
+        ].join('\n')
+      )
+    ]);
+    expect(findings.map((finding) => finding.line)).toEqual([1, 4]);
+  });
 });
