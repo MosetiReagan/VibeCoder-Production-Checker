@@ -59,7 +59,10 @@ export function loadConfig(root: string): ResolvedConfig {
       config: JSON.parse(fs.readFileSync(file, 'utf8'))
     });
     if (!parsed.success) {
-      throw new Error(`Invalid .production-check.json: ${parsed.error.issues[0]?.message}`);
+      const details = parsed.error.issues
+        .map((issue) => `${issue.path.join('.') || '(root)'}: ${issue.message}`)
+        .join('; ');
+      throw new Error(`Invalid .production-check.json: ${details}`);
     }
     user = parsed.data.config;
   }
