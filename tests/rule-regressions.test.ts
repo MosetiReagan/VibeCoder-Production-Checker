@@ -51,4 +51,15 @@ describe('rule regression coverage', () => {
     ]);
     expect(findings).toHaveLength(0);
   });
+
+  it('keeps hardcoded outbound requests with unrelated request logging quiet', async () => {
+    const { ssrf } = await import('../src/rules/security/ssrf.js');
+    const findings = await runRule(ssrf, [
+      createSourceFile(
+        'src/proxy.ts',
+        `const trace = req.query.trace;\nconst response = await fetch('https://api.example.com/data');`
+      )
+    ]);
+    expect(findings).toHaveLength(0);
+  });
 });

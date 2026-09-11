@@ -10,7 +10,7 @@ export const ssrf = createRule({
   async run(context) {
     return scanLines(
       context,
-      [/\b(?:fetch|axios\.?(?:get|post|request)?|got|request)\s*\([^)]*(?:req(?:uest)?\.(?:query|body|params|url)|request\.(?:GET|POST))/i],
+      [/\b(?:fetch|axios(?:\.(?:get|post|request))?|got|request)\s*\(\s*(?:req(?:uest)?\.(?:query|body|params|url)|request\.(?:GET|POST))/i],
       (file, line, text) => createFinding({
         ruleId: this.id,
         title: this.title,
