@@ -2,6 +2,14 @@
 
 Create `.production-check.json` in the project root.
 
+IDEs can autocomplete the file with the published JSON Schema:
+
+```json
+{
+  "$schema": "https://raw.githubusercontent.com/MosetiReagan/VibeCoder-Production-Checker/main/docs/config-schema.json"
+}
+```
+
 ```json
 {
   "extends": "recommended",
