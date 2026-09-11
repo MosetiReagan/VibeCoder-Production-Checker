@@ -11,8 +11,14 @@ export const envFilesTracked = createRule({
   confidence: 'medium',
   async run(context) {
     const findings = [];
-    for (const file of context.files.filter((item) => /^\.env(?:\..+)?$/.test(item.relativePath))) {
-      const ignored = context.gitignore.some((line) => /^\.env(\.\*)?$/.test(line));
+    for (const file of context.files.filter((item) => /(?:^|\/)\.env(?:\..+)?$/.test(item.relativePath))) {
+      const fileName = path.posix.basename(file.relativePath);
+      const ignored = context.gitignore.some((line) =>
+        line === fileName ||
+        line === '.env*' ||
+        (line === '.env' && fileName === '.env') ||
+        (line === '.env.*' && fileName.startsWith('.env.'))
+      );
       const gitDir = path.join(context.root, '.git');
       if (!ignored && fs.existsSync(gitDir)) {
         const firstSecret = file.lines.find((line) => /^\s*[A-Z0-9_]+\s*=/.test(line));

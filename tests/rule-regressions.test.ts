@@ -1,3 +1,6 @@
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { Rule, ScanContext, SourceFile } from '../src/shared.js';
 import { resolveConfig } from '../src/config.js';
@@ -183,5 +186,20 @@ describe('rule regression coverage', () => {
       createSourceFile('next.config.js', "module.exports = { assetPrefix: 'http://localhost:3000' };")
     ]);
     expect(findings).toHaveLength(1);
+  });
+
+  it('checks nested environment files against precise ignore patterns', async () => {
+    const { envFilesTracked } = await import('../src/rules/security/env-files.js');
+    const files = [createSourceFile('packages/api/.env.local', 'DATABASE_URL=postgres://example\n')];
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'production-check-env-'));
+    fs.mkdirSync(path.join(root, '.git'), { recursive: true });
+    const context = { ...createContext(files), root };
+    const ignored = await envFilesTracked.run({ ...context, gitignore: ['.env.local'] });
+    expect(ignored).toHaveLength(0);
+
+    const notIgnored = await envFilesTracked.run({ ...context, gitignore: ['.env'] });
+    expect(notIgnored).toHaveLength(1);
+    expect(notIgnored[0].file).toBe('packages/api/.env.local');
+    fs.rmSync(root, { recursive: true, force: true });
   });
 });
