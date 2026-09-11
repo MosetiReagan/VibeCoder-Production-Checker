@@ -79,4 +79,15 @@ describe('rule regression coverage', () => {
     ]);
     expect(findings.map((finding) => finding.line)).toEqual([1, 4]);
   });
+
+  it('checks rate limiting beside each authentication route', async () => {
+    const { missingRateLimiting } = await import('../src/rules/security/rate-limiting.js');
+    const findings = await runRule(missingRateLimiting, [
+      createSourceFile('package.json', '{"dependencies":{"@nestjs/throttler":"^6.0.0"}}'),
+      createSourceFile('src/routes.ts', `app.post('/login', loginHandler);`),
+      createSourceFile('src/reset.ts', `loginRateLimiter,\napp.post('/password-reset', resetHandler);`)
+    ]);
+    expect(findings).toHaveLength(1);
+    expect(findings[0].file).toBe('src/routes.ts');
+  });
 });
