@@ -18,7 +18,7 @@ export const hardcodedSecrets = createRule({
   severity: 'high',
   confidence: 'high',
   documentationUrl:
-    'https://github.com/vibecoder/production-checker/blob/main/docs/rules/SEC-001-hardcoded-secrets.md',
+    'https://github.com/MosetiReagan/VibeCoder-Production-Checker/blob/main/docs/rules/SEC-001-hardcoded-secrets.md',
   async run(context) {
     return scanLines(context, secretPatterns, (file, line, text, match) => {
       if (file === '.env.example') return null;

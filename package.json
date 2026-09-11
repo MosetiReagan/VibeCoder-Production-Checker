@@ -42,11 +42,11 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/vibecoder/production-checker.git"
+    "url": "git+https://github.com/MosetiReagan/VibeCoder-Production-Checker.git"
   },
-  "homepage": "https://github.com/vibecoder/production-checker#readme",
+  "homepage": "https://github.com/MosetiReagan/VibeCoder-Production-Checker#readme",
   "bugs": {
-    "url": "https://github.com/vibecoder/production-checker/issues"
+    "url": "https://github.com/MosetiReagan/VibeCoder-Production-Checker/issues"
   },
   "license": "MIT",
   "dependencies": {
