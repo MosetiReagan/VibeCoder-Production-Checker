@@ -35,6 +35,13 @@ export const allRules: Rule[] = [
   syncIoInHandler
 ];
 
+export function registerRule(rule: Rule): void {
+  if (allRules.some((existing) => existing.id === rule.id)) {
+    throw new Error(`Rule ${rule.id} is already registered`);
+  }
+  allRules.push(rule);
+}
+
 export function getRule(id: string): Rule | undefined {
   return allRules.find((rule) => rule.id === id);
 }

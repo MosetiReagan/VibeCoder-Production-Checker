@@ -27,4 +27,26 @@ A production rule must answer a deployment-risk question, not merely search for 
 
 Add rules to `src/rules/<category>/` and export them from `src/rules/index.ts`.
 
+Library consumers can register organization-specific rules programmatically with `registerRule`:
+
+```ts
+import { registerRule, scanProject } from 'production-check';
+
+registerRule({
+  id: 'CUSTOM-001',
+  title: 'Organization deployment policy',
+  description: 'Checks an organization-specific production requirement.',
+  category: 'production',
+  severity: 'low',
+  confidence: 'high',
+  async run(context) {
+    return [];
+  }
+});
+
+const result = await scanProject({ path: '.' });
+```
+
+The CLI intentionally does not load arbitrary rule files because doing so would execute project code. A sandboxed plugin loader is planned for v1.0.
+
 JavaScript and TypeScript rules can use the syntax-tree helpers in `src/rules/analysis/typescript-ast.ts` for more precise expression and call analysis. Regex fallbacks remain available for languages without an AST adapter.
