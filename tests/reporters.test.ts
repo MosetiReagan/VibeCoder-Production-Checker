@@ -23,4 +23,9 @@ describe('reporters', () => {
     result.config.disabled.push('SEC-001');
     expect(terminalReport(result)).toContain('1 rule(s) disabled (SEC-001)');
   });
+
+  it('supports explicit no-color output', async () => {
+    const result = await scanProject({ path: 'tests/fixtures/insecure-node-app', cache: false });
+    expect(terminalReport(result, true)).not.toContain('\u001b[');
+  });
 });

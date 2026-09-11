@@ -34,7 +34,8 @@ program
   .option('--workspace <name>', 'scan one workspace inside the target repository')
   .option('--workspaces', 'scan every detected workspace separately')
   .option('-q, --quiet', 'print findings only')
-  .action(async (target: string, options: { format: string; output?: string; html?: string; ci?: boolean; failOn?: Severity; baseline?: string; workspace?: string; workspaces?: boolean; quiet?: boolean }) => {
+  .option('--no-color', 'disable colored terminal output')
+  .action(async (target: string, options: { format: string; output?: string; html?: string; ci?: boolean; failOn?: Severity; baseline?: string; workspace?: string; workspaces?: boolean; quiet?: boolean; noColor?: boolean }) => {
     try {
       if (options.workspaces) {
         const results = await scanWorkspaces({ path: target });
@@ -65,7 +66,7 @@ program
         process.stdout.write(
           options.ci || options.quiet
             ? `${conciseReport(reportedResult)}\n`
-            : `${terminalReport(reportedResult)}\n`
+            : `${terminalReport(reportedResult, options.noColor === true)}\n`
         );
       }
       const failOn = options.failOn ?? result.config.failOn;
@@ -171,7 +172,7 @@ async function writeWorkspaceOutput(
 }
 
 function workspaceContent(
-  options: { format: string; ci?: boolean },
+  options: { format: string; ci?: boolean; noColor?: boolean },
   combined: ScanResult,
   results: ScanResult[]
 ): string {
@@ -189,7 +190,9 @@ function workspaceContent(
     );
     return `${lines.join('\n') || 'No findings'}\n`;
   }
-  return results.map((result) => `Workspace: ${result.workspace}\n${terminalReport(result)}`).join('\n\n');
+  return results
+    .map((result) => `Workspace: ${result.workspace}\n${terminalReport(result, options.noColor === true)}`)
+    .join('\n\n');
 }
 
 export { severityRank };

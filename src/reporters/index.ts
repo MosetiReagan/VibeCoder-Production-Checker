@@ -4,17 +4,19 @@ import { categoryLabels, scoreLevel } from '../shared.js';
 import type { ScanResult } from '../core/types.js';
 import { getRule } from '../rules/index.js';
 
-function colorSeverity(severity: Severity, text: string): string {
-  if (severity === 'critical') return pc.bold(pc.bgRed(text));
-  if (severity === 'high') return pc.red(text);
-  if (severity === 'medium') return pc.yellow(text);
-  if (severity === 'low') return pc.blue(text);
-  return pc.gray(text);
+function colorSeverity(severity: Severity, text: string, noColor = false): string {
+  const colors = noColor ? pc.createColors(false) : pc;
+  if (severity === 'critical') return colors.bold(colors.bgRed(text));
+  if (severity === 'high') return colors.red(text);
+  if (severity === 'medium') return colors.yellow(text);
+  if (severity === 'low') return colors.blue(text);
+  return colors.gray(text);
 }
 
-export function terminalReport(result: ScanResult): string {
+export function terminalReport(result: ScanResult, noColor = false): string {
+  const colors = noColor ? pc.createColors(false) : pc;
   const lines = [
-    pc.bold('Production Checker'),
+    colors.bold('Production Checker'),
     '─'.repeat(40),
     '',
     `Project: ${result.project.root}`,
@@ -22,7 +24,7 @@ export function terminalReport(result: ScanResult): string {
     `Files analyzed: ${result.filesAnalyzed}`,
     `Dependencies detected: ${result.dependenciesAnalyzed}`,
     '',
-    pc.bold(`Production Score: ${result.score.overall} / 100 — ${scoreLevel(result.score.overall)}`),
+    colors.bold(`Production Score: ${result.score.overall} / 100 — ${scoreLevel(result.score.overall)}`),
     ''
   ];
   for (const [category, score] of Object.entries(result.score.categories)) {
@@ -31,18 +33,18 @@ export function terminalReport(result: ScanResult): string {
   if (result.config.disabled.length > 0) {
     lines.push(
       '',
-      pc.yellow(
+      colors.yellow(
         `Note: ${result.config.disabled.length} rule(s) disabled (${result.config.disabled.join(', ')}). Disabled checks reduce score transparency.`
       )
     );
   }
-  lines.push('', pc.bold(`Findings (${result.findings.length})`), '');
-  if (result.findings.length === 0) lines.push(pc.green('✓ No findings'));
+  lines.push('', colors.bold(`Findings (${result.findings.length})`), '');
+  if (result.findings.length === 0) lines.push(colors.green('✓ No findings'));
   for (const finding of result.findings) {
     lines.push(
-      `${colorSeverity(finding.severity, finding.severity.toUpperCase().padEnd(8))} ${finding.title}`,
+      `${colorSeverity(finding.severity, finding.severity.toUpperCase().padEnd(8), noColor)} ${finding.title}`,
       `  ${finding.ruleId} · ${finding.file}:${finding.line} · confidence ${finding.confidence}`,
-      `  ${pc.gray(finding.evidence)}`,
+      `  ${colors.gray(finding.evidence)}`,
       `  Fix: ${finding.recommendation}`,
       ''
     );
