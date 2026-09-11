@@ -11,6 +11,7 @@ export interface ScanResult {
   durationMs: number;
   config: ResolvedConfig;
   cached?: boolean;
+  workspace?: string;
 }
 
 export type { ProjectInfo, Finding, ScanContext, SourceFile, ScoreBreakdown };

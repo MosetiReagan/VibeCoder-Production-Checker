@@ -75,6 +75,8 @@ Requires Node.js 20 or newer on macOS, Linux, or Windows.
 ```bash
 production-check .
 production-check packages/api
+production-check . --workspace packages/api
+production-check . --workspaces
 production-check --format json --output report.json
 production-check --format sarif --output report.sarif
 production-check --html report.html

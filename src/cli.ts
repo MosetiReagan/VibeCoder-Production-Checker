@@ -1,14 +1,16 @@
 #!/usr/bin/env node
 import fs from 'node:fs/promises';
+import path from 'node:path';
 import { Command, InvalidArgumentError } from 'commander';
 import pc from 'picocolors';
-import { scanProject } from './core/scanner.js';
+import { scanProject, scanWorkspaces } from './core/scanner.js';
 import { explainScores, findingsMeetThreshold } from './core/scoring.js';
 import { applyBaseline, createBaseline } from './core/baseline.js';
 import { conciseReport, htmlReport, jsonReport, markdownReport, sarifReport, terminalReport } from './reporters/index.js';
 import { getRule } from './rules/index.js';
 import type { Severity } from './shared.js';
 import { severityRank } from './shared.js';
+import type { ScanResult } from './core/types.js';
 
 const severities = ['critical', 'high', 'medium', 'low', 'info'];
 
@@ -29,9 +31,26 @@ program
   .option('--ci', 'use concise CI output and exit 1 when the fail-on threshold is violated')
   .option('--fail-on <severity>', 'minimum severity that causes CI failure', severity)
   .option('--baseline <file>', 'suppress findings recorded in a baseline file')
-  .action(async (target: string, options: { format: string; output?: string; html?: string; ci?: boolean; failOn?: Severity; baseline?: string }) => {
+  .option('--workspace <name>', 'scan one workspace inside the target repository')
+  .option('--workspaces', 'scan every detected workspace separately')
+  .action(async (target: string, options: { format: string; output?: string; html?: string; ci?: boolean; failOn?: Severity; baseline?: string; workspace?: string; workspaces?: boolean }) => {
     try {
-      const result = await scanProject({ path: target });
+      if (options.workspaces) {
+        const results = await scanWorkspaces({ path: target });
+        const combined = combineWorkspaceResults(results);
+        const reportedResults = options.baseline
+          ? results.map((result) => applyBaseline(result, options.baseline as string))
+          : results;
+        const reportedCombined = options.baseline ? combineWorkspaceResults(reportedResults) : combined;
+        await writeWorkspaceOutput(options, reportedCombined, reportedResults);
+        const failOn = options.failOn ?? combined.config.failOn;
+        if (options.ci && failOn && findingsMeetThreshold(reportedCombined.findings, failOn)) {
+          process.stderr.write(`Failing because findings meet or exceed ${failOn}\n`);
+          process.exitCode = 1;
+        }
+        return;
+      }
+      const result = await scanProject({ path: target, workspace: options.workspace });
       const reportedResult = options.baseline ? applyBaseline(result, options.baseline) : result;
       if (options.html) await fs.writeFile(options.html, htmlReport(reportedResult), 'utf8');
       const format = options.format.toLowerCase();
@@ -109,6 +128,63 @@ function reportFor(format: string, result: Awaited<ReturnType<typeof scanProject
   if (format === 'sarif') return sarifReport(result);
   if (format === 'terminal') return concise ? conciseReport(result) + '\n' : terminalReport(result);
   throw new Error(`Unsupported format: ${format}. Use terminal, json, markdown, or sarif.`);
+}
+
+function combineWorkspaceResults(results: ScanResult[]): ScanResult {
+  const findings = results.flatMap((result) =>
+    result.findings.map((finding) => ({
+      ...finding,
+      file: `${result.workspace}/${finding.file}`
+    }))
+  );
+  const overall = Math.round(results.reduce((sum, result) => sum + result.score.overall, 0) / results.length);
+  return {
+    ...results[0],
+    project: { ...results[0].project, root: path.dirname(results[0].project.root) },
+    filesAnalyzed: results.reduce((sum, result) => sum + result.filesAnalyzed, 0),
+    dependenciesAnalyzed: results.reduce((sum, result) => sum + result.dependenciesAnalyzed, 0),
+    findings,
+    score: { ...results[0].score, overall },
+    durationMs: results.reduce((sum, result) => sum + result.durationMs, 0),
+    cached: results.every((result) => result.cached),
+    workspace: undefined
+  };
+}
+
+async function writeWorkspaceOutput(
+  options: { format: string; output?: string; html?: string; ci?: boolean },
+  combined: ScanResult,
+  results: ScanResult[]
+): Promise<void> {
+  if (options.html) await fs.writeFile(options.html, htmlReport(combined), 'utf8');
+  const content = workspaceContent(options, combined, results);
+  if (options.output) {
+    await fs.writeFile(options.output, content, 'utf8');
+    return;
+  }
+  process.stdout.write(content);
+}
+
+function workspaceContent(
+  options: { format: string; ci?: boolean },
+  combined: ScanResult,
+  results: ScanResult[]
+): string {
+  if (options.format === 'json') return `${JSON.stringify(results, null, 2)}\n`;
+  if (options.format === 'sarif') return sarifReport(combined);
+  if (options.format === 'markdown') {
+    return results.map((result) => `## Workspace: ${result.workspace}\n\n${markdownReport(result)}`).join('\n');
+  }
+  if (options.ci) {
+    const lines = results.flatMap((result) =>
+      result.findings.map(
+        (finding) =>
+          `[${result.workspace}] ${finding.severity.toUpperCase()} ${finding.ruleId} ${finding.file}:${finding.line} ${finding.title}`
+      )
+    );
+    return `${lines.join('\n') || 'No findings'}\n`;
+  }
+  return results.map((result) => `Workspace: ${result.workspace}\n${terminalReport(result)}`).join('\n\n');
 }
 
 export { severityRank };

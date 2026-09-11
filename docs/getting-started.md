@@ -19,6 +19,8 @@ node dist/cli.js .
 
 ```bash
 node dist/cli.js tests/fixtures/insecure-node-app
+node dist/cli.js . --workspace packages/api
+node dist/cli.js . --workspaces
 node dist/cli.js . --format json --output report.json
 node dist/cli.js . --format markdown --output report.md
 node dist/cli.js . --format sarif --output report.sarif

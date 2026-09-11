@@ -5,6 +5,7 @@ import { discoverFiles } from './files.js';
 import { calculateScore } from './scoring.js';
 import { allRules } from '../rules/index.js';
 import { loadConfig } from '../config.js';
+import { detectWorkspaces } from '../detectors/workspaces.js';
 import { loadCachedResult, projectSignature, ruleEngineVersion, saveCachedResult } from './cache.js';
 import type { Finding, ScanContext, ScanResult } from './types.js';
 import type { Severity } from '../shared.js';
@@ -24,11 +25,17 @@ function applyRulePolicy(findings: Finding[], config: ReturnType<typeof loadConf
     }));
 }
 
-export async function scanProject(input: { path: string; cache?: boolean }): Promise<ScanResult> {
+export async function scanProject(input: { path: string; cache?: boolean; workspace?: string }): Promise<ScanResult> {
   const started = Date.now();
   const root = path.resolve(input.path);
   if (!fs.existsSync(root) || !fs.statSync(root).isDirectory()) {
     throw new Error(`Project directory does not exist: ${root}`);
+  }
+  if (input.workspace) {
+    const workspace = detectWorkspaces(root).find((candidate) => candidate.name === input.workspace);
+    if (!workspace) throw new Error(`Workspace not found: ${input.workspace}`);
+    const result = await scanProject({ path: workspace.path, cache: input.cache });
+    return { ...result, workspace: workspace.name };
   }
   const config = loadConfig(root);
   const files = discoverFiles(root, config.excludes);
@@ -65,6 +72,18 @@ export async function scanProject(input: { path: string; cache?: boolean }): Pro
   };
   if (shouldCache) saveCachedResult(signature, result);
   return result;
+}
+
+export async function scanWorkspaces(input: { path: string; cache?: boolean }): Promise<ScanResult[]> {
+  const root = path.resolve(input.path);
+  const workspaces = detectWorkspaces(root);
+  if (workspaces.length === 0) throw new Error(`No workspaces detected in ${root}`);
+  return Promise.all(
+    workspaces.map(async (workspace) => ({
+      ...(await scanProject({ path: workspace.path, cache: input.cache })),
+      workspace: workspace.name
+    }))
+  );
 }
 
 function countDependencies(manifest: Record<string, unknown> | null): number {
