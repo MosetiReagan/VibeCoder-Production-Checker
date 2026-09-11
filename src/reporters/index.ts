@@ -211,6 +211,6 @@ function escapeHtml(value: string): string {
 
 export function conciseReport(result: ScanResult): string {
   return result.findings.map((finding) =>
-    `${finding.severity.toUpperCase()} ${finding.ruleId} ${finding.file}:${finding.line} ${finding.title}`
+    `${finding.severity.toUpperCase()} | ${finding.ruleId} | ${finding.file}:${finding.line} | ${finding.title}`
   ).join('\n') || 'No findings';
 }

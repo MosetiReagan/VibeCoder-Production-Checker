@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { scanProject } from '../src/index.js';
-import { htmlReport, jsonReport, markdownReport, sarifReport, terminalReport } from '../src/reporters/index.js';
+import { conciseReport, htmlReport, jsonReport, markdownReport, sarifReport, terminalReport } from '../src/reporters/index.js';
 
 describe('reporters', () => {
   it('produces valid machine-readable reports', async () => {
@@ -15,6 +15,7 @@ describe('reporters', () => {
     expect(htmlReport(result)).toContain('<!doctype html>');
     expect(htmlReport(result)).toContain('data-severity-filter');
     expect(htmlReport(result)).toContain('id="finding-1"');
+    expect(result.findings.length === 0 || conciseReport(result).includes(' | ')).toBe(true);
   });
 
   it('discloses disabled rules in terminal output', async () => {
