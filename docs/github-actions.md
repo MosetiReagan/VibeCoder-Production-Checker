@@ -1,15 +1,13 @@
 # GitHub Actions
 
-This repository includes a ready-to-publish action manifest at `action/action.yml`.
+This repository includes a ready-to-publish Node 20 action at `action/action.yml`. The bundled entry point is `action/index.js`; no Docker image is required.
 
 ## Build and publish
 
 1. Create a separate public repository named `production-check-action`.
-2. Copy `action/action.yml` into that repository.
-3. Build and publish a Docker image to a namespace you own.
-4. Replace `ghcr.io/vibecoder/production-check:v1` with your image.
-5. Tag the repository `v1`.
-6. Publish and test against a fixture repository.
+2. Copy `action/action.yml` and `action/index.js` into that repository.
+3. Tag the repository `v1`.
+4. Publish and test against a fixture repository.
 
 ## Usage
 
@@ -28,4 +26,4 @@ jobs:
           fail-on: high
 ```
 
-The action uses Docker so no Node setup is required. It invokes the CLI in CI mode and preserves its exit code.
+The action runs directly on Node 20, prints concise findings, and preserves the severity-based exit code.

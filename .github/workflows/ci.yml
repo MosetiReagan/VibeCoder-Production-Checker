@@ -24,5 +24,6 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
+      - run: npm run build:action
       - run: node dist/cli.js tests/fixtures/insecure-node-app --format json --output report.json
       - run: node dist/cli.js tests/fixtures/secure-app --ci --fail-on high

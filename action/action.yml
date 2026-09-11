@@ -13,10 +13,5 @@ inputs:
     required: false
     default: 'high'
 runs:
-  using: 'docker'
-  image: 'docker://ghcr.io/vibecoder/production-check:v1'
-  args:
-    - ${{ inputs.path }}
-    - '--ci'
-    - '--fail-on'
-    - ${{ inputs.fail-on }}
+  using: 'node20'
+  main: 'index.js'
