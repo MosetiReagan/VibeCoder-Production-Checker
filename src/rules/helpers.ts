@@ -52,6 +52,6 @@ export function redactValue(value: string): string {
 }
 
 export function trimEvidence(text: string, maxLength = 180): string {
-  const trimmed = text.trim();
+  const trimmed = text.trim().replace(/\r?\n/g, '\\n');
   return trimmed.length > maxLength ? `${trimmed.slice(0, maxLength - 3)}...` : trimmed;
 }
